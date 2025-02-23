@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": true,
+    "target": "es2021",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "noEmitOnError": true,
+    "lib": ["es2021", "dom", "DOM.Iterable"],
+    "strict": false,
+    "esModuleInterop": false,
+    "allowSyntheticDefaultImports": true,
+    "experimentalDecorators": true,
+    "importHelpers": true,
+    "outDir": "dist",
+    "sourceMap": true,
+    "declarationMap": true,
+    "emitDeclarationOnly": true,
+    "inlineSources": true,
+    "rootDir": "./",
+    "declaration": true,
+    "incremental": true,
+    "skipLibCheck": true,
+    "types": ["@vitest/browser/providers/playwright"]
+  },
+  "include": ["**/*.js"],
+  "exclude": ["node_modules", "dist", "coverage"]
+}
