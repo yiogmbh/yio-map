@@ -4,16 +4,16 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import https from 'node:https';
 import { defineConfig, loadEnv } from 'vite';
+import peerDepsExternal from 'rollup-plugin-peer-deps-external';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-
-const externalRegEx = /(ol|ol-mapbox-style)(\/.+)?$/;
 
 export default ({ mode }) => {
   const env = { ...process.env, ...loadEnv(mode, process.cwd(), '') };
 
   // https://vitejs.dev/config/
   const config = defineConfig({
+    plugins: [peerDepsExternal()],
     build: {
       minify: false,
       lib: {
@@ -21,15 +21,6 @@ export default ({ mode }) => {
         name: 'yio-map',
         fileName: 'yio-map',
         formats: ['es'],
-      },
-      rollupOptions: {
-        external: id => externalRegEx.test(id),
-        output: {
-          globals: id =>
-            externalRegEx.test(id)
-              ? id.replace(/\.js$/, '').split('/').join('.')
-              : id,
-        },
       },
     },
     test: {
