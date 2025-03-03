@@ -21,7 +21,7 @@
     "declaration": true,
     "incremental": true,
     "skipLibCheck": true,
-    "types": ["@vitest/browser/providers/playwright"]
+    "types": ["@vitest/browser/providers/playwright", "vite/client"]
   },
   "include": ["**/*.js"],
   "exclude": ["node_modules", "dist", "coverage"]

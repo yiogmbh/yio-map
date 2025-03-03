@@ -34,7 +34,8 @@
     "storybook:build": "storybook build"
   },
   "dependencies": {
-    "lit": "^3.1.4"
+    "lit": "^3.1.4",
+    "ol-mapbox-style": "^12.5.0"
   },
   "peerDependencies": {
     "ol": "^10.4.0"

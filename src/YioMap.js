@@ -1,11 +1,11 @@
 import { html, css, LitElement, unsafeCSS } from 'lit';
-//@ts-expect-error
 import style from 'ol/ol.css?inline';
 import Map from 'ol/Map.js';
 import { fromLonLat, toLonLat } from 'ol/proj.js';
 import TileLayer from 'ol/layer/Tile.js';
 import OSM from 'ol/source/OSM.js';
-import { ref } from 'lit/directives/ref.js';
+import LayerGroup from 'ol/layer/Group.js';
+import apply from 'ol-mapbox-style';
 
 export class YioMap extends LitElement {
   static styles = [
@@ -44,11 +44,16 @@ export class YioMap extends LitElement {
   }
 
   __createMap() {
+    const yio = new LayerGroup();
+    apply(yio, '/api/v2/pip/tiles/resources/style.json').catch(error => {
+      console.error(error);
+    });
     this.#map = new Map({
       layers: [
         new TileLayer({
           source: new OSM(),
         }),
+        yio,
       ],
     });
     this.#map.on('moveend', () => {
