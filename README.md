@@ -80,6 +80,8 @@ npm start
 
 To run a local development server that serves the basic demo located in `index.html`
 
+To be able to access yio resources, an `.env` file should be created. See `.env.example` for an explanation of available environment variables. As a starting point, copy `.env.example` to `.env`.
+
 ## Build
 
 ```bash

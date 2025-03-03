@@ -2,5 +2,6 @@
 /dist/
 /test/__screenshots__/
 .husky
+.env
 
 *storybook.log
