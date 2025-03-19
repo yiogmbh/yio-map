@@ -142,12 +142,15 @@ export default class LayerControl extends Control {
     this.displayLayerSelection = !this.displayLayerSelection;
   }
 
+  /**
+   * Hides the layer selection with a fade-out animation
+   */
   fadeOutAndHide() {
     this.layerControlElement.classList.add('fade-out'); // Start fade-out animation
 
     setTimeout(() => {
       this.layerControlElement.classList.remove('fade-out'); // Remove fade-out class
       this.layerControlElement.classList.add('hidden'); // Set display: none after animation
-    }, 150); // Match the transition duration (0.5s)
+    }, 150); // Match the transition duration (0.15s)
   }
 }
