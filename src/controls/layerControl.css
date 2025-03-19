@@ -1,0 +1,48 @@
+.layer-control {
+  top: 65px;
+  left: 0.5em;
+}
+
+.layer-control > button {
+  cursor: pointer;
+}
+
+.ol-touch .layer-control {
+  top: 80px;
+}
+
+.layer-selection {
+  display: flex;
+  align-items: center;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  z-index: 10;
+  padding: 10px;
+  padding-right: 0px;
+  background-color: white;
+}
+
+.layer-selection.hidden {
+  display: none;
+}
+
+.image-box {
+  cursor: pointer;
+  text-align: center;
+  width: 130px;
+  height: 130px;
+  margin-right: 10px;
+  border-radius: 8px;
+  border: 2px solid #bdbdbd;
+}
+
+.image-box:hover {
+  border: 2px solid #474747 !important;
+}
+
+.image-box img {
+  width: 130px;
+  height: 130px;
+  border-radius: 8px;
+  object-fit: cover;
+}
