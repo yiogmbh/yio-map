@@ -4,12 +4,8 @@ import layerControlStyle from './controls/layerControl.css?inline';
 
 import Map from 'ol/Map.js';
 import { fromLonLat, toLonLat } from 'ol/proj.js';
-import TileLayer from 'ol/layer/Tile.js';
-import OSM from 'ol/source/OSM.js';
-import LayerGroup from 'ol/layer/Group.js';
-import apply from 'ol-mapbox-style';
 import { defaults as defaultControls } from 'ol/control/defaults.js';
-import LayerControl from './LayerControl.js';
+import LayerControl from './controls/LayerControl.js';
 
 export class YioMap extends LitElement {
   static styles = [
@@ -49,19 +45,11 @@ export class YioMap extends LitElement {
   }
 
   __createMap() {
-    const yio = new LayerGroup();
-    apply(yio, '/api/v2/pip/tiles/resources/style.json').catch(error => {
-      console.error(error);
-    });
     this.#map = new Map({
-      controls: defaultControls().extend([new LayerControl()]),
-      layers: [
-        new TileLayer({
-          source: new OSM(),
-        }),
-        yio,
-      ],
+      controls: defaultControls(),
+      layers: [],
     });
+    this.#map.addControl(new LayerControl({ map: this.#map }));
     this.#map.on('moveend', () => {
       this.#mapmove = true;
       const view = this.#map.getView();
