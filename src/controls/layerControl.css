@@ -48,8 +48,7 @@
 }
 
 .image-box:hover {
-  /** border: 2px solid #474747 !important; **/
-  box-shadow: 6px 4px 4px #949494;
+  box-shadow: 0 0 6px #949494;
 }
 
 .image-box img {
