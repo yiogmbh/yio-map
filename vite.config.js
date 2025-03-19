@@ -50,6 +50,30 @@ export default ({ mode }) => {
         },
       },
     };
+
+    const myfiber = () => ({
+      name: 'configure-server',
+      configureServer: server => {
+        const regex = new RegExp(env.API_TARGET, 'g');
+        server.middlewares.use((req, res, next) => {
+          if (req.url.startsWith(`/api/`)) {
+            res.setHeader('Transfer-Encoding', 'chunked');
+            const write = res.write;
+            res.write = (chunk, encoding, callback) => {
+              if (res.getHeader('Content-Type') === 'application/json') {
+                if (chunk instanceof Buffer) {
+                  chunk = chunk.toString('utf-8');
+                }
+                chunk = chunk.replace(regex, '/');
+              }
+              write.call(res, chunk, encoding, callback);
+            };
+          }
+          next();
+        });
+      },
+    });
+    config.plugins.push(myfiber());
   }
 
   return config;

@@ -18,5 +18,10 @@
   </head>
   <body>
     <yio-map id="demo" center="[16, 48]" zoom="12" class="map"></yio-map>
+    <script>
+      document.getElementById('demo').addEventListener('click', e => {
+        console.log(e.detail);
+      });
+    </script>
   </body>
 </html>

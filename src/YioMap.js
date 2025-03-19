@@ -6,6 +6,9 @@ import Map from 'ol/Map.js';
 import { fromLonLat, toLonLat } from 'ol/proj.js';
 import { defaults as defaultControls } from 'ol/control/defaults.js';
 import LayerControl from './controls/LayerControl.js';
+import VectorSource from 'ol/source/Vector.js';
+import VectorLayer from 'ol/layer/Vector.js';
+import { toFeature } from 'ol/render/Feature.js';
 
 export class YioMap extends LitElement {
   static styles = [
@@ -26,11 +29,12 @@ export class YioMap extends LitElement {
   static properties = {
     center: { type: Array, reflect: true },
     zoom: { type: Number, reflect: true },
-    onMapmove: { type: Function },
   };
 
   /** @type {Map} */
   #map = null;
+
+  #userSelectSource = new VectorSource();
 
   /** @type {boolean} */
   #skipNextMapmoveEvent = false;
@@ -47,7 +51,11 @@ export class YioMap extends LitElement {
   __createMap() {
     this.#map = new Map({
       controls: defaultControls(),
-      layers: [],
+      layers: [
+        new VectorLayer({
+          source: this.#userSelectSource,
+        }),
+      ],
     });
     this.#map.addControl(new LayerControl({ map: this.#map }));
     this.#map.on('moveend', () => {
@@ -66,14 +74,43 @@ export class YioMap extends LitElement {
         }),
       );
     });
+    this.#map.on('pointermove', event => {
+      const features = this.#map.getFeaturesAtPixel(event.pixel, {
+        layerFilter: layer => yio.getLayers().getArray().includes(layer),
+      });
+      this.#map.getTargetElement().style.cursor = features.length
+        ? 'pointer'
+        : '';
+    });
+    this.#map.on('click', event => {
+      const features = this.#map.getFeaturesAtPixel(event.pixel, {
+        layerFilter: layer => yio.getLayers().getArray().includes(layer),
+      });
+      this.#userSelectSource.clear();
+      this.#userSelectSource.addFeatures(
+        features.map(
+          /** @param {import('ol/render/Feature.js').default} renderFeature */
+          renderFeature => toFeature(renderFeature),
+        ),
+      );
+      const userSelect = features.map(feature => feature.getProperties());
+      const customEvent = new CustomEvent('click', {
+        composed: true,
+        bubbles: true,
+        detail: { userSelect },
+      });
+      this.dispatchEvent(customEvent);
+    });
   }
 
   firstUpdated(changedProperties) {
     super.firstUpdated(changedProperties);
     this.__createMap();
-    this.#map.setTarget(
-      /** @type {HTMLElement} */ (this.shadowRoot.querySelector('.map')),
+    const target = /** @type {HTMLElement} */ (
+      this.shadowRoot.querySelector('.map')
     );
+    this.shadowRoot.addEventListener('click', event => event.stopPropagation());
+    this.#map.setTarget(target);
   }
 
   updated(changedProperties) {
