@@ -4,6 +4,9 @@ import TileLayer from 'ol/layer/Tile.js';
 import VectorTileLayer from 'ol/layer/VectorTile.js';
 import { XYZ } from 'ol/source.js';
 import { createXYZ, TileGrid } from 'ol/tilegrid.js';
+import positronThumbnail from '../../assets/positron.png';
+import orthoThumbnail from '../../assets/ortho.png';
+import katasterThumbnail from '../../assets/kataster.png';
 
 const bmapAttribution =
   '<a href="http://www.basemap.at">basemap.at</a> &copy; <a href="http://creativecommons.org/licenses/by/3.0/at/">CC BY 3.0 AT</a>';
@@ -32,7 +35,7 @@ const bmapTilegrid = new TileGrid({
 const baseLayers = [
   {
     name: 'positron',
-    image: 'positron.png',
+    image: positronThumbnail,
     styleUrl: 'https://tiles.openfreemap.org/styles/positron',
     layer: null,
     thumbnailBox: null,
@@ -40,7 +43,7 @@ const baseLayers = [
   },
   {
     name: 'orthofoto',
-    image: 'ortho.png',
+    image: orthoThumbnail,
     layer: new TileLayer({
       source: new XYZ(
         Object.assign({
@@ -56,7 +59,7 @@ const baseLayers = [
   },
   {
     name: 'kataster',
-    image: 'kataster.png',
+    image: katasterThumbnail,
     styleUrl: 'https://kataster.bev.gv.at/styles/kataster/style_basic.json',
     layer: null,
     thumbnailBox: null,
