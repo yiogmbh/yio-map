@@ -29,6 +29,7 @@ export class YioMap extends LitElement {
   static properties = {
     center: { type: Array, reflect: true },
     zoom: { type: Number, reflect: true },
+    userSelect: { attribute: false },
   };
 
   /** @type {Map} */
@@ -46,6 +47,7 @@ export class YioMap extends LitElement {
     super();
     this.center = [0, 0];
     this.zoom = 2;
+    this.userSelect = [];
   }
 
   __createMap() {
@@ -93,13 +95,7 @@ export class YioMap extends LitElement {
           renderFeature => toFeature(renderFeature),
         ),
       );
-      const userSelect = features.map(feature => feature.getProperties());
-      const customEvent = new CustomEvent('click', {
-        composed: true,
-        bubbles: true,
-        detail: { userSelect },
-      });
-      this.dispatchEvent(customEvent);
+      this.userSelect = features.map(feature => feature.getProperties());
     });
   }
 
@@ -109,7 +105,6 @@ export class YioMap extends LitElement {
     const target = /** @type {HTMLElement} */ (
       this.shadowRoot.querySelector('.map')
     );
-    this.shadowRoot.addEventListener('click', event => event.stopPropagation());
     this.#map.setTarget(target);
   }
 
