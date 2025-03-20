@@ -4,11 +4,10 @@ import layerControlStyle from './controls/LayerControl.css?inline';
 
 import Map from 'ol/Map.js';
 import { fromLonLat, toLonLat } from 'ol/proj.js';
-import { defaults as defaultControls } from 'ol/control/defaults.js';
 import LayerControl from './controls/LayerControl.js';
-import VectorSource from 'ol/source/Vector.js';
-import VectorLayer from 'ol/layer/Vector.js';
-import { toFeature } from 'ol/render/Feature.js';
+import UserSelectInteraction from './controls/UserSelectInteraction.js';
+import LayerGroup from 'ol/layer/Group.js';
+import apply from 'ol-mapbox-style';
 
 export class YioMap extends LitElement {
   static styles = [
@@ -32,16 +31,14 @@ export class YioMap extends LitElement {
     userSelect: { attribute: false },
   };
 
+  /** @type {boolean} */
+  notifyNextChange = false;
+
   /** @type {Map} */
   #map = null;
 
-  #userSelectSource = new VectorSource();
-
-  /** @type {boolean} */
-  #skipNextMapmoveEvent = false;
-
-  /** @type {boolean} */
-  #mapmove = false;
+  /** @type {LayerGroup} */
+  #contentLayer = new LayerGroup();
 
   constructor() {
     super();
@@ -50,83 +47,77 @@ export class YioMap extends LitElement {
     this.userSelect = [];
   }
 
-  __createMap() {
-    this.#map = new Map({
-      controls: defaultControls(),
-      layers: [
-        new VectorLayer({
-          source: this.#userSelectSource,
-        }),
-      ],
-    });
+  /**
+   * @returns {LayerGroup}
+   */
+  _getContentLayer() {
+    return this.#contentLayer;
+  }
+
+  #createMap() {
+    this.#map = new Map();
     this.#map.addControl(new LayerControl({ map: this.#map }));
+
+    this.#map.addLayer(this.#contentLayer);
+    apply(this.#contentLayer, '/api/v2/pip/tiles/resources/style.json').catch(
+      error => {
+        console.error(error);
+      },
+    );
+
+    this.#map.addInteraction(
+      new UserSelectInteraction({
+        yioMap: this,
+      }),
+    );
+
+    let firstMove = true;
+
     this.#map.on('moveend', () => {
-      this.#mapmove = true;
-      const view = this.#map.getView();
-      this.center = toLonLat(view.getCenter());
-      this.zoom = view.getZoom();
-      if (this.#skipNextMapmoveEvent) {
-        this.#skipNextMapmoveEvent = false;
+      if (firstMove) {
+        firstMove = false;
         return;
       }
-      this.dispatchEvent(
-        new Event('change', {
-          composed: true,
-          bubbles: true,
-        }),
-      );
-    });
-    this.#map.on('pointermove', event => {
-      const features = this.#map.getFeaturesAtPixel(event.pixel, {
-        layerFilter: layer => yio.getLayers().getArray().includes(layer),
-      });
-      this.#map.getTargetElement().style.cursor = features.length
-        ? 'pointer'
-        : '';
-    });
-    this.#map.on('click', event => {
-      const features = this.#map.getFeaturesAtPixel(event.pixel, {
-        layerFilter: layer => yio.getLayers().getArray().includes(layer),
-      });
-      this.#userSelectSource.clear();
-      this.#userSelectSource.addFeatures(
-        features.map(
-          /** @param {import('ol/render/Feature.js').default} renderFeature */
-          renderFeature => toFeature(renderFeature),
-        ),
-      );
-      this.userSelect = features.map(feature => feature.getProperties());
+      const view = this.#map.getView();
+      this.notifyNextChange = true;
+      this.center = toLonLat(view.getCenter());
+      this.zoom = view.getZoom();
     });
   }
 
   firstUpdated(changedProperties) {
     super.firstUpdated(changedProperties);
-    this.__createMap();
+    this.#createMap();
     const target = /** @type {HTMLElement} */ (
       this.shadowRoot.querySelector('.map')
     );
+    this.shadowRoot.addEventListener('click', event => event.stopPropagation());
     this.#map.setTarget(target);
   }
 
   updated(changedProperties) {
-    if (this.#mapmove) {
-      this.#mapmove = false;
+    super.updated(changedProperties);
+    if (
+      !this.notifyNextChange &&
+      (changedProperties.has('center') || changedProperties.has('zoom'))
+    ) {
+      this.#map.getView().animate({
+        center: fromLonLat(this.center),
+        zoom: this.zoom,
+        duration: 500,
+      });
+    }
+    if (!this.notifyNextChange) {
       return;
     }
-    this.#skipNextMapmoveEvent = true;
-    super.updated(changedProperties);
-    if (changedProperties.has('center') || changedProperties.has('zoom')) {
-      this.#map.getView().animate(
-        {
-          center: fromLonLat(this.center),
-          zoom: this.zoom,
-          duration: 500,
-        },
-        () => {
-          this.#skipNextMapmoveEvent = true;
-        },
-      );
-    }
+    this.notifyNextChange = false;
+    this.dispatchEvent(
+      new CustomEvent('change', {
+        composed: true,
+        bubbles: true,
+        detail: { changedProperties },
+      }),
+    );
   }
 
   render() {

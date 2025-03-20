@@ -1,5 +1,5 @@
 import { it, describe, expect, vi } from 'vitest';
-import { userEvent } from '@vitest/browser/context';
+import { page, userEvent } from '@vitest/browser/context';
 import '../src/index.js';
 
 describe('YioMap', () => {
@@ -56,5 +56,17 @@ describe('YioMap', () => {
     await userEvent.dblClick(el);
     await new Promise(resolve => setTimeout(resolve, 500));
     expect(onchange).toHaveBeenCalled();
+  });
+
+  it('dispatches a click event when user clicks on the map', async () => {
+    /** @type {import('../src/YioMap.js').YioMap} */
+    const el = await fixture('<yio-map tabindex="0"></yio-map>');
+
+    const onclick = vi.fn(() => true);
+    el.addEventListener('click', onclick);
+
+    await page.elementLocator(el).click({ position: { x: 100, y: 100 } });
+    await new Promise(resolve => setTimeout(resolve, 0));
+    expect(onclick).toHaveBeenCalled();
   });
 });
