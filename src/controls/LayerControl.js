@@ -1,30 +1,76 @@
 import { applyStyle } from 'ol-mapbox-style';
 import Control from 'ol/control/Control.js';
+import TileLayer from 'ol/layer/Tile.js';
 import VectorTileLayer from 'ol/layer/VectorTile.js';
+import { XYZ } from 'ol/source.js';
+import { createXYZ, TileGrid } from 'ol/tilegrid.js';
 
+const bmapAttribution =
+  '<a href="http://www.basemap.at">basemap.at</a> &copy; <a href="http://creativecommons.org/licenses/by/3.0/at/">CC BY 3.0 AT</a>';
+const bmapExtent = [977650, 5838030, 1913530, 6281290];
+const bmapTilegrid = new TileGrid({
+  extent: bmapExtent,
+  origin: [-20037508.3428, 20037508.3428],
+  resolutions: createXYZ({
+    maxZoom: 18,
+  }).getResolutions(),
+});
+
+/**
+ * @typedef {Object} LayerItem
+ * @property {string} name
+ * @property {string} image
+ * @property {string=} styleUrl
+ * @property {TileLayer|VectorTileLayer} layer
+ * @property {HTMLDivElement} thumbnailBox
+ * @property {boolean} visible
+ */
+
+/**
+ * @type {Array<LayerItem>}
+ */
 const baseLayers = [
   {
     name: 'positron',
     image: 'positron.png',
     styleUrl: 'https://tiles.openfreemap.org/styles/positron',
+    layer: null,
+    thumbnailBox: null,
+    visible: true,
   },
   {
     name: 'orthofoto',
-    image: 'bright.png',
-    styleUrl: 'https://tiles.openfreemap.org/styles/bright',
+    image: 'ortho.png',
+    layer: new TileLayer({
+      source: new XYZ(
+        Object.assign({
+          attributions: bmapAttribution,
+          crossOrigin: 'anonymous',
+          tileGrid: bmapTilegrid,
+          url: 'https://neu{1-4}.mapserver.at/mapproxy/wmts/bmaporthofoto30cm/normal/google3857/{z}/{y}/{x}.jpeg',
+        }),
+      ),
+    }),
+    thumbnailBox: null,
+    visible: false,
   },
   {
     name: 'kataster',
     image: 'kataster.png',
     styleUrl: 'https://kataster.bev.gv.at/styles/kataster/style_basic.json',
+    layer: null,
+    thumbnailBox: null,
+    visible: false,
   },
 ].map((item, i) => {
-  item.layer = new VectorTileLayer({
-    declutter: true,
-    visible: i === 0, // only the first layer is visible
-  });
   if (item.styleUrl) {
-    applyStyle(item.layer, item.styleUrl);
+    item.layer = new VectorTileLayer({
+      declutter: true,
+      visible: i === 0, // only the first layer is visible
+    });
+    if (item.styleUrl) {
+      applyStyle(item.layer, item.styleUrl);
+    }
   }
 
   const thumbnailBox = document.createElement('div');
@@ -62,7 +108,7 @@ export default class LayerControl extends Control {
   constructor(opt_options) {
     const options = opt_options || {};
     const activatorButton = document.createElement('button');
-    activatorButton.innerHTML = `<div style="width: 22px; height: 22px; scale: 0.8"><svg width="22" height="22" viewBox="0 0 22 22" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+    activatorButton.innerHTML = `<div class="svgContainer"><svg width="22" height="22" viewBox="0 0 22 22" fill="rgb(102, 102, 102)" xmlns="http://www.w3.org/2000/svg">
     <path d="M11 4.7 16.9 9.4 11 14.1 5.1 9.4 11 4.7ZM11 16.7 20.4 9.4 11 2.1 1.6 9.4 11 16.7M11 19.3 3.5 13.3 1.6 14.7 11 21.9 20.4 14.7 18.5 13.3 11 19.3"/>
       </svg></div>`;
 
