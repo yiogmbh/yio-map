@@ -4,9 +4,9 @@ import TileLayer from 'ol/layer/Tile.js';
 import VectorTileLayer from 'ol/layer/VectorTile.js';
 import { XYZ } from 'ol/source.js';
 import { createXYZ, TileGrid } from 'ol/tilegrid.js';
-import positronThumbnail from '../../assets/positron.png';
-import orthoThumbnail from '../../assets/ortho.png';
-import katasterThumbnail from '../../assets/kataster.png';
+import positronThumbnail from '../assets/positron.png';
+import orthoThumbnail from '../assets/ortho.png';
+import katasterThumbnail from '../assets/kataster.png';
 
 const bmapAttribution =
   '<a href="http://www.basemap.at">basemap.at</a> &copy; <a href="http://creativecommons.org/licenses/by/3.0/at/">CC BY 3.0 AT</a>';
@@ -26,7 +26,6 @@ const bmapTilegrid = new TileGrid({
  * @property {string=} styleUrl
  * @property {TileLayer|VectorTileLayer} layer
  * @property {HTMLDivElement} thumbnailBox
- * @property {boolean} visible
  */
 
 /**
@@ -39,12 +38,12 @@ const baseLayers = [
     styleUrl: 'https://tiles.openfreemap.org/styles/positron',
     layer: null,
     thumbnailBox: null,
-    visible: true,
   },
   {
     name: 'orthofoto',
     image: orthoThumbnail,
     layer: new TileLayer({
+      visible: false,
       source: new XYZ(
         Object.assign({
           attributions: bmapAttribution,
@@ -63,7 +62,6 @@ const baseLayers = [
     styleUrl: 'https://kataster.bev.gv.at/styles/kataster/style_basic.json',
     layer: null,
     thumbnailBox: null,
-    visible: false,
   },
 ].map((item, i) => {
   if (item.styleUrl) {
