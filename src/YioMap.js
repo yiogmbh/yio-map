@@ -1,6 +1,6 @@
 import { html, css, LitElement, unsafeCSS } from 'lit';
 import style from 'ol/ol.css?inline';
-import layerControlStyle from './controls/layerControl.css?inline';
+import layerControlStyle from './controls/LayerControl.css?inline';
 
 import Map from 'ol/Map.js';
 import { fromLonLat, toLonLat } from 'ol/proj.js';
