@@ -123,9 +123,22 @@ export default class LayerControl extends Control {
     return item;
   });
 
+  /**
+   * @type {LayerGroup} layer group containing all base layers
+   */
+  baseLayerGroup;
+
   setMap(map) {
+    if (this.getMap()) {
+      this.getMap().removeLayer(this.baseLayerGroup);
+    }
+    if (map) {
+      this.baseLayerGroup = new LayerGroup({
+        layers: this.baseLayers.map(i => i.layer),
+      });
+      map.addLayer(this.baseLayerGroup);
+    }
     super.setMap(map);
-    map.addLayer(new LayerGroup({ layers: this.baseLayers.map(i => i.layer) }));
   }
 
   /**
@@ -150,7 +163,7 @@ export default class LayerControl extends Control {
       setTimeout(() => {
         this.getMap()
           .getTargetElement()
-          .addEventListener('click', handleGlobalClick); // debounced
+          .addEventListener('click', handleGlobalClick); // escape the ongoing click event
       });
       this.getMap().once('moveend', () => {
         if (this.displayLayerSelection) {
