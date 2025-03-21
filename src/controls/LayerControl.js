@@ -106,14 +106,14 @@ export default class LayerControl extends Control {
     const container = document.createElement('div');
     container.classList.add('layer-selection', 'hidden');
     element.appendChild(container);
-    baseLayers.forEach(item => {
-      container.appendChild(item.thumbnailBox);
-      options.map.addLayer(item.layer);
-    });
 
     super({
       element: element,
       target: options.target,
+    });
+
+    baseLayers.forEach(item => {
+      container.appendChild(item.thumbnailBox);
     });
 
     this.layerControlElement = container;
@@ -122,21 +122,19 @@ export default class LayerControl extends Control {
       this.toggleLayerSelection.bind(this),
       false,
     );
-    this.activatorButton = activatorButton;
-    this.map = options.map;
   }
 
-  /**
-   * @type {HTMLButtonElement} activator button, containing the layer selection icon
-   */
-  static activatorButton = null;
-
-  static map = null;
+  setMap(map) {
+    super.setMap(map);
+    baseLayers.forEach(item => {
+      this.getMap().addLayer(item.layer);
+    });
+  }
 
   /**
    * @type {HTMLDivElement} layer control container
    */
-  static layerControlElement = null;
+  layerControlElement = null;
 
   /**
    * @param {boolean} visible set visibility of the layer selection
@@ -153,7 +151,7 @@ export default class LayerControl extends Control {
       setTimeout(() => {
         document.body.addEventListener('click', handleGlobalClick); // debounced
       });
-      this.map.once('moveend', () => {
+      this.getMap().once('moveend', () => {
         if (this.displayLayerSelection) {
           this.displayLayerSelection = false;
           document.body.removeEventListener('click', handleGlobalClick); // Remove listener after first trigger
