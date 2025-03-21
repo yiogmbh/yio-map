@@ -3,9 +3,9 @@ import Control from 'ol/control/Control.js';
 import TileLayer from 'ol/layer/Tile.js';
 import { ImageTile } from 'ol/source.js';
 import LayerGroup from 'ol/layer/Group.js';
-import positronThumbnail from '../assets/positron.png';
-import orthoThumbnail from '../assets/ortho.png';
-import katasterThumbnail from '../assets/kataster.png';
+import positronThumbnail from '../assets/positron.jpg';
+import orthoThumbnail from '../assets/ortho.jpg';
+import katasterThumbnail from '../assets/kataster.jpg';
 
 /**
  * @typedef {Object} LayerItem
