@@ -1,106 +1,20 @@
-import { applyStyle } from 'ol-mapbox-style';
+import apply from 'ol-mapbox-style';
 import Control from 'ol/control/Control.js';
 import TileLayer from 'ol/layer/Tile.js';
-import VectorTileLayer from 'ol/layer/VectorTile.js';
-import { XYZ } from 'ol/source.js';
-import { createXYZ, TileGrid } from 'ol/tilegrid.js';
-import positronThumbnail from '../assets/positron.png';
-import orthoThumbnail from '../assets/ortho.png';
-import katasterThumbnail from '../assets/kataster.png';
-
-const bmapAttribution =
-  '<a href="http://www.basemap.at">basemap.at</a> &copy; <a href="http://creativecommons.org/licenses/by/3.0/at/">CC BY 3.0 AT</a>';
-const bmapExtent = [977650, 5838030, 1913530, 6281290];
-const bmapTilegrid = new TileGrid({
-  extent: bmapExtent,
-  origin: [-20037508.3428, 20037508.3428],
-  resolutions: createXYZ({
-    maxZoom: 18,
-  }).getResolutions(),
-});
+import { ImageTile } from 'ol/source.js';
+import LayerGroup from 'ol/layer/Group.js';
+import positronThumbnail from '../assets/positron.jpg';
+import orthoThumbnail from '../assets/ortho.jpg';
+import katasterThumbnail from '../assets/kataster.jpg';
 
 /**
  * @typedef {Object} LayerItem
  * @property {string} name
  * @property {string} image
  * @property {string=} styleUrl
- * @property {TileLayer|VectorTileLayer} layer
+ * @property {TileLayer|LayerGroup} layer
  * @property {HTMLDivElement} thumbnailBox
  */
-
-/**
- * @type {Array<LayerItem>}
- */
-const baseLayers = [
-  {
-    name: 'positron',
-    image: positronThumbnail,
-    styleUrl: 'https://tiles.openfreemap.org/styles/positron',
-    layer: null,
-    thumbnailBox: null,
-  },
-  {
-    name: 'orthofoto',
-    image: orthoThumbnail,
-    layer: new TileLayer({
-      visible: false,
-      source: new XYZ(
-        Object.assign({
-          attributions: bmapAttribution,
-          crossOrigin: 'anonymous',
-          tileGrid: bmapTilegrid,
-          url: 'https://neu{1-4}.mapserver.at/mapproxy/wmts/bmaporthofoto30cm/normal/google3857/{z}/{y}/{x}.jpeg',
-        }),
-      ),
-    }),
-    thumbnailBox: null,
-    visible: false,
-  },
-  {
-    name: 'kataster',
-    image: katasterThumbnail,
-    styleUrl: 'https://kataster.bev.gv.at/styles/kataster/style_basic.json',
-    layer: null,
-    thumbnailBox: null,
-  },
-].map((item, i) => {
-  if (item.styleUrl) {
-    item.layer = new VectorTileLayer({
-      declutter: true,
-      visible: i === 0, // only the first layer is visible
-    });
-    if (item.styleUrl) {
-      applyStyle(item.layer, item.styleUrl);
-    }
-  }
-
-  const thumbnailBox = document.createElement('div');
-  thumbnailBox.classList.add('image-box');
-  if (i === 0) {
-    thumbnailBox.classList.add('selected');
-  }
-
-  const img = document.createElement('img');
-  img.src = item.image;
-  img.alt = item.title;
-
-  thumbnailBox.appendChild(img);
-  thumbnailBox.addEventListener('click', e => {
-    baseLayers.forEach(layer => {
-      if (e.target === layer.thumbnailBox) {
-        layer.thumbnailBox.classList.add('selected');
-      } else {
-        layer.thumbnailBox.classList.remove('selected');
-      }
-    });
-    baseLayers.forEach(layer => {
-      layer.layer.setVisible(layer.name === item.name);
-    });
-  });
-  item.thumbnailBox = thumbnailBox;
-
-  return item;
-});
 
 export default class LayerControl extends Control {
   /**
@@ -120,14 +34,14 @@ export default class LayerControl extends Control {
     const container = document.createElement('div');
     container.classList.add('layer-selection', 'hidden');
     element.appendChild(container);
-    baseLayers.forEach(item => {
-      container.appendChild(item.thumbnailBox);
-      options.map.addLayer(item.layer);
-    });
 
     super({
       element: element,
       target: options.target,
+    });
+
+    this.baseLayers.forEach(item => {
+      container.appendChild(item.thumbnailBox);
     });
 
     this.layerControlElement = container;
@@ -136,38 +50,120 @@ export default class LayerControl extends Control {
       this.toggleLayerSelection.bind(this),
       false,
     );
-    this.activatorButton = activatorButton;
-    this.map = options.map;
   }
 
-  /**
-   * @type {HTMLButtonElement} activator button, containing the layer selection icon
-   */
-  static activatorButton = null;
+  baseLayers = [
+    {
+      name: 'positron',
+      image: positronThumbnail,
+      styleUrl: 'https://tiles.openfreemap.org/styles/positron',
+    },
+    {
+      name: 'orthofoto',
+      image: orthoThumbnail,
+      layer: new TileLayer({
+        visible: false,
+        source: new ImageTile({
+          maxZoom: 19,
+          url: 'https://mapsneu.wien.gv.at/basemap/bmaporthofoto30cm/normal/google3857/{z}/{y}/{x}.jpg',
+          attributions:
+            'Grundkarte: <a href="https://basemap.at">basemap.at</a>',
+        }),
+      }),
+      visible: false,
+    },
+    {
+      name: 'kataster',
+      image: katasterThumbnail,
+      styleUrl: 'https://kataster.bev.gv.at/styles/kataster/style_basic.json',
+    },
+  ].map(
+    /**
+     * @param {Partial<LayerItem>} item
+     * @param {number} i
+     * @returns {LayerItem}
+     */
+    (item, i) => {
+      if (item.styleUrl) {
+        item.layer = new LayerGroup({
+          visible: i === 0, // only the first layer is visible
+        });
+        if (item.styleUrl) {
+          apply(item.layer, item.styleUrl);
+        }
+      }
 
-  static map = null;
+      const thumbnailBox = document.createElement('div');
+      thumbnailBox.classList.add('image-box');
+      if (i === 0) {
+        thumbnailBox.classList.add('selected');
+      }
+
+      const img = document.createElement('img');
+      img.src = item.image;
+      img.alt = item.name;
+
+      thumbnailBox.appendChild(img);
+      thumbnailBox.addEventListener('click', e => {
+        this.baseLayers.forEach(layer => {
+          if (e.target === layer.thumbnailBox) {
+            layer.thumbnailBox.classList.add('selected');
+          } else {
+            layer.thumbnailBox.classList.remove('selected');
+          }
+        });
+        this.baseLayers.forEach(layer => {
+          layer.layer.setVisible(layer.name === item.name);
+        });
+      });
+      item.thumbnailBox = thumbnailBox;
+
+      return /** @type {LayerItem} */ (item);
+    },
+  );
+
+  /**
+   * @type {LayerGroup} layer group containing all base layers
+   */
+  baseLayerGroup;
+
+  setMap(map) {
+    if (this.getMap()) {
+      this.getMap().removeLayer(this.baseLayerGroup);
+    }
+    if (map) {
+      this.baseLayerGroup = new LayerGroup({
+        layers: this.baseLayers.map(i => i.layer),
+      });
+      map.addLayer(this.baseLayerGroup);
+    }
+    super.setMap(map);
+  }
 
   /**
    * @type {HTMLDivElement} layer control container
    */
-  static layerControlElement = null;
+  layerControlElement = null;
 
   /**
    * @param {boolean} visible set visibility of the layer selection
    */
   set displayLayerSelection(visible) {
     if (visible) {
-      //this.activatorButton.classList.add('hidden');
       this.layerControlElement.classList.remove('hidden');
       const handleGlobalClick = () => {
         // close the layer selection on click anywhere
         this.displayLayerSelection = false;
-        document.body.removeEventListener('click', handleGlobalClick); // Remove listener after first trigger
+        this.getMap()
+          .getTargetElement()
+          .removeEventListener('click', handleGlobalClick); // Remove listener after first trigger
       };
       setTimeout(() => {
-        document.body.addEventListener('click', handleGlobalClick); // debounced
+        this.getMap()
+          .getTargetElement()
+          .addEventListener('click', handleGlobalClick); // escape the ongoing click event
       });
-      this.map.once('moveend', () => {
+      this.getMap().once('moveend', () => {
         if (this.displayLayerSelection) {
           this.displayLayerSelection = false;
           document.body.removeEventListener('click', handleGlobalClick); // Remove listener after first trigger
