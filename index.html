@@ -9,14 +9,53 @@
     <style>
       body {
         background: #fafafa;
+        font-family: sans-serif;
       }
       .map {
         height: 400px;
+      }
+      #info {
+        display: none;
+        position: absolute;
+        min-width: 200px;
+        min-height: 20px;
+        background-color: rgba(0, 0, 0, 0.7);
+        color: white;
+        padding: 5px;
+        border-radius: 5px;
+        white-space: nowrap;
       }
     </style>
     <script type="module" src="./src/YioMap.js"></script>
   </head>
   <body>
-    <yio-map id="demo" center="[16, 48]" zoom="12" class="map"></yio-map>
+    <yio-map
+      id="demo"
+      center="[15.4956,48.8486]"
+      zoom="13.9"
+      class="map"
+    ></yio-map>
+    <div id="info"></div>
+    <script>
+      const map = document.getElementById('demo');
+      const info = document.getElementById('info');
+      map.addEventListener('pointermove', () => {
+        info.style.display = 'none';
+      });
+      map.addEventListener('click', e => {
+        const item = e.target.userSelect[0];
+        info.style.display = item ? 'block' : 'none';
+        if (!item) {
+          return;
+        }
+        let text = '';
+        for (const key in item) {
+          text += `${key}: ${item[key]}\n`;
+        }
+        info.innerText = text;
+        info.style.left = `${e.clientX - info.clientWidth / 2}px`;
+        info.style.top = `${e.clientY + 10}px`;
+      });
+    </script>
   </body>
 </html>

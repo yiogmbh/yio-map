@@ -8,6 +8,7 @@ const meta = {
   component: 'yio-map',
   args: {
     onchange: fn(),
+    onclick: fn(),
   },
 };
 
@@ -19,7 +20,6 @@ export const Default = {
   args: {},
 };
 
-// More on writing stories with args: https://storybook.js.org/docs/writing-stories/args
 /** @type {import('@storybook/web-components').StoryObj} */
 export const CenterAndZoomArguments = {
   args: {
