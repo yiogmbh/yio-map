@@ -89,3 +89,13 @@ npm run build
 ```
 
 To build the web component. In addition to the package files, a standalone script with all dependencies included will be available in `dist/yio-map.umd.cjs`.
+
+## Publishing a release
+
+The quickest way to push a tag that triggers an automated release process is to use `npm vesion {patch|minor|major}` and `git push --folow-tags`. Example:
+
+```bash
+git pull origin main
+npm version patch
+git push --follow-tags
+```
