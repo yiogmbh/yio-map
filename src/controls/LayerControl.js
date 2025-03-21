@@ -1,8 +1,8 @@
-import { applyStyle } from 'ol-mapbox-style';
+import apply from 'ol-mapbox-style';
 import Control from 'ol/control/Control.js';
 import TileLayer from 'ol/layer/Tile.js';
-import VectorTileLayer from 'ol/layer/VectorTile.js';
 import { ImageTile } from 'ol/source.js';
+import LayerGroup from 'ol/layer/Group.js';
 import positronThumbnail from '../assets/positron.png';
 import orthoThumbnail from '../assets/ortho.png';
 import katasterThumbnail from '../assets/kataster.png';
@@ -12,7 +12,7 @@ import katasterThumbnail from '../assets/kataster.png';
  * @property {string} name
  * @property {string} image
  * @property {string=} styleUrl
- * @property {TileLayer|VectorTileLayer} layer
+ * @property {TileLayer|LayerGroup} layer
  * @property {HTMLDivElement} thumbnailBox
  */
 
@@ -51,12 +51,11 @@ const baseLayers = [
   },
 ].map((item, i) => {
   if (item.styleUrl) {
-    item.layer = new VectorTileLayer({
-      declutter: true,
+    item.layer = new LayerGroup({
       visible: i === 0, // only the first layer is visible
     });
     if (item.styleUrl) {
-      applyStyle(item.layer, item.styleUrl);
+      apply(item.layer, item.styleUrl);
     }
   }
 
@@ -126,9 +125,9 @@ export default class LayerControl extends Control {
 
   setMap(map) {
     super.setMap(map);
-    baseLayers.forEach(item => {
-      this.getMap().addLayer(item.layer);
-    });
+    this.getMap().addLayer(
+      new LayerGroup({ layers: baseLayers.map(i => i.layer) }),
+    );
   }
 
   /**
