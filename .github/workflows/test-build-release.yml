@@ -6,6 +6,8 @@ name: Node.js CI
 on:
   push:
     branches: ['main']
+    tags:
+      - 'v*'
   pull_request:
     branches: ['main']
 
@@ -25,7 +27,7 @@ jobs:
       - run: npm run build --if-present
       - name: Release
         uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/tags/')
+        if: startsWith(github.ref, 'refs/tags/v')
         with:
           files: dist/yio-map.umd.cjs
           generate_release_notes: true
