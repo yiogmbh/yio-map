@@ -27,7 +27,7 @@
     "lint": "eslint --ext .js,.html . && prettier \"**/*.(js|html)\" --check --ignore-path .gitignore",
     "format": "eslint --ext .js,.html . --fix && prettier \"**/*.(js|html)\" --write --ignore-path .gitignore",
     "prepare": "husky",
-    "pretest": "tsc --noEmit && npx playwright install --with-deps chromium",
+    "pretest": "tsc --noEmit && npx playwright install chromium-headless-shell",
     "test": "vitest run --silent",
     "test:watch": "npm run pretest && vitest watch",
     "storybook": "storybook dev -p 6006",
@@ -58,9 +58,9 @@
     "playwright": "^1.50.1",
     "prettier": "^3.5.2",
     "rollup-plugin-peer-deps-external": "^2.2.4",
-    "storybook": "^8.5.8",
+    "storybook": "^8.6.7",
     "typescript": "^5.7.3",
-    "vite": "^6.1.1",
+    "vite": "^6.2.2",
     "vitest": "^3.0.6"
   },
   "lint-staged": {
