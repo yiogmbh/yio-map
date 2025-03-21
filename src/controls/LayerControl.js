@@ -16,77 +16,6 @@ import katasterThumbnail from '../assets/kataster.jpg';
  * @property {HTMLDivElement} thumbnailBox
  */
 
-/**
- * @type {Array<LayerItem>}
- */
-const baseLayers = [
-  {
-    name: 'positron',
-    image: positronThumbnail,
-    styleUrl: 'https://tiles.openfreemap.org/styles/positron',
-    layer: null,
-    thumbnailBox: null,
-  },
-  {
-    name: 'orthofoto',
-    image: orthoThumbnail,
-    layer: new TileLayer({
-      visible: false,
-      source: new ImageTile({
-        maxZoom: 19,
-        url: 'https://mapsneu.wien.gv.at/basemap/bmaporthofoto30cm/normal/google3857/{z}/{y}/{x}.jpg',
-        attributions:
-          '<a href="http://www.basemap.at">basemap.at</a> &copy; <a href="http://creativecommons.org/licenses/by/3.0/at/">CC BY 3.0 AT</a>',
-      }),
-    }),
-    thumbnailBox: null,
-    visible: false,
-  },
-  {
-    name: 'kataster',
-    image: katasterThumbnail,
-    styleUrl: 'https://kataster.bev.gv.at/styles/kataster/style_basic.json',
-    layer: null,
-    thumbnailBox: null,
-  },
-].map((item, i) => {
-  if (item.styleUrl) {
-    item.layer = new LayerGroup({
-      visible: i === 0, // only the first layer is visible
-    });
-    if (item.styleUrl) {
-      apply(item.layer, item.styleUrl);
-    }
-  }
-
-  const thumbnailBox = document.createElement('div');
-  thumbnailBox.classList.add('image-box');
-  if (i === 0) {
-    thumbnailBox.classList.add('selected');
-  }
-
-  const img = document.createElement('img');
-  img.src = item.image;
-  img.alt = item.title;
-
-  thumbnailBox.appendChild(img);
-  thumbnailBox.addEventListener('click', e => {
-    baseLayers.forEach(layer => {
-      if (e.target === layer.thumbnailBox) {
-        layer.thumbnailBox.classList.add('selected');
-      } else {
-        layer.thumbnailBox.classList.remove('selected');
-      }
-    });
-    baseLayers.forEach(layer => {
-      layer.layer.setVisible(layer.name === item.name);
-    });
-  });
-  item.thumbnailBox = thumbnailBox;
-
-  return item;
-});
-
 export default class LayerControl extends Control {
   /**
    * @param {Object} [opt_options] Control options.
@@ -111,7 +40,7 @@ export default class LayerControl extends Control {
       target: options.target,
     });
 
-    baseLayers.forEach(item => {
+    this.baseLayers.forEach(item => {
       container.appendChild(item.thumbnailBox);
     });
 
@@ -123,10 +52,81 @@ export default class LayerControl extends Control {
     );
   }
 
+  /**
+   * @type {Array<LayerItem>}
+   */
+  baseLayers = [
+    {
+      name: 'positron',
+      image: positronThumbnail,
+      styleUrl: 'https://tiles.openfreemap.org/styles/positron',
+      layer: null,
+      thumbnailBox: null,
+    },
+    {
+      name: 'orthofoto',
+      image: orthoThumbnail,
+      layer: new TileLayer({
+        visible: false,
+        source: new ImageTile({
+          maxZoom: 19,
+          url: 'https://mapsneu.wien.gv.at/basemap/bmaporthofoto30cm/normal/google3857/{z}/{y}/{x}.jpg',
+          attributions:
+            'Grundkarte: <a href="https://basemap.at">basemap.at</a>',
+        }),
+      }),
+      thumbnailBox: null,
+      visible: false,
+    },
+    {
+      name: 'kataster',
+      image: katasterThumbnail,
+      styleUrl: 'https://kataster.bev.gv.at/styles/kataster/style_basic.json',
+      layer: null,
+      thumbnailBox: null,
+    },
+  ].map((item, i) => {
+    if (item.styleUrl) {
+      item.layer = new LayerGroup({
+        visible: i === 0, // only the first layer is visible
+      });
+      if (item.styleUrl) {
+        apply(item.layer, item.styleUrl);
+      }
+    }
+
+    const thumbnailBox = document.createElement('div');
+    thumbnailBox.classList.add('image-box');
+    if (i === 0) {
+      thumbnailBox.classList.add('selected');
+    }
+
+    const img = document.createElement('img');
+    img.src = item.image;
+    img.alt = item.title;
+
+    thumbnailBox.appendChild(img);
+    thumbnailBox.addEventListener('click', e => {
+      this.baseLayers.forEach(layer => {
+        if (e.target === layer.thumbnailBox) {
+          layer.thumbnailBox.classList.add('selected');
+        } else {
+          layer.thumbnailBox.classList.remove('selected');
+        }
+      });
+      this.baseLayers.forEach(layer => {
+        layer.layer.setVisible(layer.name === item.name);
+      });
+    });
+    item.thumbnailBox = thumbnailBox;
+
+    return item;
+  });
+
   setMap(map) {
     super.setMap(map);
     this.getMap().addLayer(
-      new LayerGroup({ layers: baseLayers.map(i => i.layer) }),
+      new LayerGroup({ layers: this.baseLayers.map(i => i.layer) }),
     );
   }
 
