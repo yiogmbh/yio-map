@@ -2,22 +2,10 @@ import { applyStyle } from 'ol-mapbox-style';
 import Control from 'ol/control/Control.js';
 import TileLayer from 'ol/layer/Tile.js';
 import VectorTileLayer from 'ol/layer/VectorTile.js';
-import { XYZ } from 'ol/source.js';
-import { createXYZ, TileGrid } from 'ol/tilegrid.js';
+import { ImageTile } from 'ol/source.js';
 import positronThumbnail from '../assets/positron.png';
 import orthoThumbnail from '../assets/ortho.png';
 import katasterThumbnail from '../assets/kataster.png';
-
-const bmapAttribution =
-  '<a href="http://www.basemap.at">basemap.at</a> &copy; <a href="http://creativecommons.org/licenses/by/3.0/at/">CC BY 3.0 AT</a>';
-const bmapExtent = [977650, 5838030, 1913530, 6281290];
-const bmapTilegrid = new TileGrid({
-  extent: bmapExtent,
-  origin: [-20037508.3428, 20037508.3428],
-  resolutions: createXYZ({
-    maxZoom: 18,
-  }).getResolutions(),
-});
 
 /**
  * @typedef {Object} LayerItem
@@ -44,14 +32,12 @@ const baseLayers = [
     image: orthoThumbnail,
     layer: new TileLayer({
       visible: false,
-      source: new XYZ(
-        Object.assign({
-          attributions: bmapAttribution,
-          crossOrigin: 'anonymous',
-          tileGrid: bmapTilegrid,
-          url: 'https://neu{1-4}.mapserver.at/mapproxy/wmts/bmaporthofoto30cm/normal/google3857/{z}/{y}/{x}.jpeg',
-        }),
-      ),
+      source: new ImageTile({
+        maxZoom: 19,
+        url: 'https://mapsneu.wien.gv.at/basemap/bmaporthofoto30cm/normal/google3857/{z}/{y}/{x}.jpg',
+        attributions:
+          '<a href="http://www.basemap.at">basemap.at</a> &copy; <a href="http://creativecommons.org/licenses/by/3.0/at/">CC BY 3.0 AT</a>',
+      }),
     }),
     thumbnailBox: null,
     visible: false,
