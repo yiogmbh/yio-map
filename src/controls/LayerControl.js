@@ -52,16 +52,11 @@ export default class LayerControl extends Control {
     );
   }
 
-  /**
-   * @type {Array<LayerItem>}
-   */
   baseLayers = [
     {
       name: 'positron',
       image: positronThumbnail,
       styleUrl: 'https://tiles.openfreemap.org/styles/positron',
-      layer: null,
-      thumbnailBox: null,
     },
     {
       name: 'orthofoto',
@@ -75,53 +70,57 @@ export default class LayerControl extends Control {
             'Grundkarte: <a href="https://basemap.at">basemap.at</a>',
         }),
       }),
-      thumbnailBox: null,
       visible: false,
     },
     {
       name: 'kataster',
       image: katasterThumbnail,
       styleUrl: 'https://kataster.bev.gv.at/styles/kataster/style_basic.json',
-      layer: null,
-      thumbnailBox: null,
     },
-  ].map((item, i) => {
-    if (item.styleUrl) {
-      item.layer = new LayerGroup({
-        visible: i === 0, // only the first layer is visible
-      });
+  ].map(
+    /**
+     * @param {Partial<LayerItem>} item
+     * @param {number} i
+     * @returns {LayerItem}
+     */
+    (item, i) => {
       if (item.styleUrl) {
-        apply(item.layer, item.styleUrl);
-      }
-    }
-
-    const thumbnailBox = document.createElement('div');
-    thumbnailBox.classList.add('image-box');
-    if (i === 0) {
-      thumbnailBox.classList.add('selected');
-    }
-
-    const img = document.createElement('img');
-    img.src = item.image;
-    img.alt = item.title;
-
-    thumbnailBox.appendChild(img);
-    thumbnailBox.addEventListener('click', e => {
-      this.baseLayers.forEach(layer => {
-        if (e.target === layer.thumbnailBox) {
-          layer.thumbnailBox.classList.add('selected');
-        } else {
-          layer.thumbnailBox.classList.remove('selected');
+        item.layer = new LayerGroup({
+          visible: i === 0, // only the first layer is visible
+        });
+        if (item.styleUrl) {
+          apply(item.layer, item.styleUrl);
         }
-      });
-      this.baseLayers.forEach(layer => {
-        layer.layer.setVisible(layer.name === item.name);
-      });
-    });
-    item.thumbnailBox = thumbnailBox;
+      }
 
-    return item;
-  });
+      const thumbnailBox = document.createElement('div');
+      thumbnailBox.classList.add('image-box');
+      if (i === 0) {
+        thumbnailBox.classList.add('selected');
+      }
+
+      const img = document.createElement('img');
+      img.src = item.image;
+      img.alt = item.name;
+
+      thumbnailBox.appendChild(img);
+      thumbnailBox.addEventListener('click', e => {
+        this.baseLayers.forEach(layer => {
+          if (e.target === layer.thumbnailBox) {
+            layer.thumbnailBox.classList.add('selected');
+          } else {
+            layer.thumbnailBox.classList.remove('selected');
+          }
+        });
+        this.baseLayers.forEach(layer => {
+          layer.layer.setVisible(layer.name === item.name);
+        });
+      });
+      item.thumbnailBox = thumbnailBox;
+
+      return /** @type {LayerItem} */ (item);
+    },
+  );
 
   /**
    * @type {LayerGroup} layer group containing all base layers
@@ -151,7 +150,6 @@ export default class LayerControl extends Control {
    */
   set displayLayerSelection(visible) {
     if (visible) {
-      //this.activatorButton.classList.add('hidden');
       this.layerControlElement.classList.remove('hidden');
       const handleGlobalClick = () => {
         // close the layer selection on click anywhere
