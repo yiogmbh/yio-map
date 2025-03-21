@@ -125,9 +125,7 @@ export default class LayerControl extends Control {
 
   setMap(map) {
     super.setMap(map);
-    this.getMap().addLayer(
-      new LayerGroup({ layers: this.baseLayers.map(i => i.layer) }),
-    );
+    map.addLayer(new LayerGroup({ layers: this.baseLayers.map(i => i.layer) }));
   }
 
   /**
@@ -145,10 +143,14 @@ export default class LayerControl extends Control {
       const handleGlobalClick = () => {
         // close the layer selection on click anywhere
         this.displayLayerSelection = false;
-        document.body.removeEventListener('click', handleGlobalClick); // Remove listener after first trigger
+        this.getMap()
+          .getTargetElement()
+          .removeEventListener('click', handleGlobalClick); // Remove listener after first trigger
       };
       setTimeout(() => {
-        document.body.addEventListener('click', handleGlobalClick); // debounced
+        this.getMap()
+          .getTargetElement()
+          .addEventListener('click', handleGlobalClick); // debounced
       });
       this.getMap().once('moveend', () => {
         if (this.displayLayerSelection) {
