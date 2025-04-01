@@ -60,17 +60,6 @@ export const ContentMap = {
               {
                 type: 'Feature',
                 geometry: {
-                  type: 'LineString',
-                  coordinates: [
-                    [-74.01, 40.7128],
-                    [-74.005, 40.7158],
-                  ],
-                },
-                properties: { color: '#0000ff' },
-              },
-              {
-                type: 'Feature',
-                geometry: {
                   type: 'Point',
                   coordinates: [-74.003, 40.7148],
                 },
@@ -81,15 +70,6 @@ export const ContentMap = {
         },
       },
       layers: [
-        {
-          id: 'polygon-layer',
-          type: 'fill',
-          source: 'simple-features',
-          paint: {
-            'fill-color': '#ff0000',
-            'fill-opacity': 0.5,
-          },
-        },
         {
           id: 'line-layer',
           type: 'line',
