@@ -28,6 +28,7 @@ export class YioMap extends LitElement {
   static properties = {
     center: { type: Array, reflect: true },
     zoom: { type: Number, reflect: true },
+    contentMap: { type: String },
     userSelect: { attribute: false },
   };
 
@@ -36,6 +37,11 @@ export class YioMap extends LitElement {
 
   /** @type {Map} */
   #map = null;
+
+  /**
+   * @type {string} Mapbox / MapLibre style, or URL to style
+   */
+  #contentMap = '';
 
   /** @type {LayerGroup} */
   #contentLayer = new LayerGroup();
@@ -54,17 +60,31 @@ export class YioMap extends LitElement {
     return this.#contentLayer;
   }
 
+  set contentMap(value) {
+    this.#contentMap = value;
+    this.#applyContentMap();
+  }
+
+  get contentMap() {
+    return this.#contentMap;
+  }
+
+  #applyContentMap() {
+    if (this.#map && this.#contentLayer) {
+      apply(this.#contentLayer, this.contentMap).catch(error => {
+        console.error(error);
+      });
+    }
+  }
+
   #createMap() {
     this.#map = new Map();
     this.#map.addControl(new LayerControl({ map: this.#map }));
 
+    if (this.contentMap) {
+      this.#applyContentMap();
+    }
     this.#map.addLayer(this.#contentLayer);
-    apply(this.#contentLayer, '/api/v2/pip/tiles/resources/style.json').catch(
-      error => {
-        console.error(error);
-      },
-    );
-
     this.#map.addInteraction(
       new UserSelectInteraction({
         yioMap: this,
