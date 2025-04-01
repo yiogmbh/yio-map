@@ -69,4 +69,34 @@ describe('YioMap', () => {
     await new Promise(resolve => setTimeout(resolve, 0));
     expect(onclick).toHaveBeenCalled();
   });
+
+  it('creates content layer with mapbox style', async () => {
+    /** @type {import('../src/YioMap.js').YioMap} */
+    const el = await fixture('<yio-map tabindex="0"></yio-map>');
+    el.contentMap = JSON.stringify({
+      version: 8,
+      sources: {
+        'simple-features': {
+          type: 'geojson',
+          data: {
+            type: 'FeatureCollection',
+            features: [],
+          },
+        },
+      },
+      layers: [
+        {
+          id: 'point-layer',
+          source: 'simple-features',
+        },
+      ],
+    });
+
+    const numberOfContentLayers = await new Promise(resolve => {
+      setTimeout(() => {
+        resolve(el._getContentLayer().getLayers().getLength());
+      }, 0);
+    });
+    expect(numberOfContentLayers).to.be.greaterThan(0);
+  });
 });
