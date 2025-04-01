@@ -71,9 +71,13 @@ export class YioMap extends LitElement {
 
   #applyContentMap() {
     if (this.#map && this.#contentLayer) {
-      apply(this.#contentLayer, this.contentMap).catch(error => {
-        console.error(error);
-      });
+      if (this.contentMap) {
+        apply(this.#contentLayer, this.contentMap).catch(error => {
+          console.error(error);
+        });
+      } else {
+        this.#contentLayer.getLayers().clear();
+      }
     }
   }
 
