@@ -42,9 +42,12 @@ export default class UserSelectInteraction extends Interaction {
   #handlePointerMove(event) {
     const map = this.getMap();
     const contentLayer = this.#yioMap._getContentLayer();
-    const features = map.getFeaturesAtPixel(event.pixel, {
-      layerFilter: layer => contentLayer.getLayers().getArray().includes(layer),
-    });
+    const features = map
+      .getFeaturesAtPixel(event.pixel, {
+        layerFilter: layer =>
+          contentLayer.getLayers().getArray().includes(layer),
+      })
+      .filter(feature => feature.get('id') !== undefined);
     map.getTargetElement().style.cursor = features.length ? 'pointer' : '';
   }
 
@@ -55,9 +58,12 @@ export default class UserSelectInteraction extends Interaction {
     const map = this.getMap();
     const contentLayer = this.#yioMap._getContentLayer();
     const userSelectSource = this.#layer.getSource();
-    const features = map.getFeaturesAtPixel(event.pixel, {
-      layerFilter: layer => contentLayer.getLayers().getArray().includes(layer),
-    });
+    const features = map
+      .getFeaturesAtPixel(event.pixel, {
+        layerFilter: layer =>
+          contentLayer.getLayers().getArray().includes(layer),
+      })
+      .filter(feature => feature.get('id') !== undefined);
     userSelectSource.clear();
     userSelectSource.addFeatures(
       features.map(
