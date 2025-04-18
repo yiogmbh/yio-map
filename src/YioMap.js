@@ -65,11 +65,19 @@ export class YioMap extends LitElement {
    */
   #userSelectInteraction = null;
 
+  #contentLayerPromise = null;
+
   constructor() {
     super();
     this.center = [0, 0];
     this.zoom = 2;
     this.userSelect = [];
+    this.#userEditInteraction = new UserEditInteraction({
+      yioMap: this,
+    });
+    this.#userSelectInteraction = new UserSelectInteraction({
+      yioMap: this,
+    });
   }
 
   /**
@@ -91,9 +99,6 @@ export class YioMap extends LitElement {
   set editLayer(value) {
     const oldValue = this.#editLayer;
     this.#editLayer = value;
-    if (!this.#userEditInteraction) {
-      return;
-    }
     if (!value && oldValue) {
       // when the editlayer-attribute is removed, the edit source is cleared.
       // re-fetch all tiles, the new changes are supposed to be ready on the server.
@@ -109,10 +114,8 @@ export class YioMap extends LitElement {
     return this.#editLayer;
   }
 
-  #handleEditLayerChange() {
-    if (!this.#userEditInteraction) {
-      return;
-    }
+  async #handleEditLayerChange() {
+    await this.#contentLayerPromise;
     this.#userSelectInteraction.setActive(!this.editLayer);
     this.#userEditInteraction.setActive(!!this.editLayer);
   }
@@ -131,21 +134,16 @@ export class YioMap extends LitElement {
   }
 
   #applyContentMap() {
-    if (this.#map && this.#contentLayer) {
+    if (this.#contentLayer) {
       this.#contentLayer.getLayers().clear();
-      const editOlLayer =
-        this.#userEditInteraction && this.#userEditInteraction.getEditLayer();
-      editOlLayer.getSource().clear();
-
+      this.#contentLayerPromise = null;
       if (this.contentMap) {
-        apply(this.#contentLayer, this.contentMap)
-          .then(() => {
-            // check state of attributes that need the contentLayer
-            this.#handleEditLayerChange();
-          })
-          .catch(error => {
-            console.error(error);
-          });
+        this.#contentLayerPromise = apply(
+          this.#contentLayer,
+          this.contentMap,
+        ).catch(error => {
+          console.error(error);
+        });
       }
     }
   }
@@ -159,20 +157,8 @@ export class YioMap extends LitElement {
 
     this.#map.addLayer(this.#contentLayer);
 
-    this.#userEditInteraction = new UserEditInteraction({
-      yioMap: this,
-      map: this.#map,
-    });
-    this.#userSelectInteraction = new UserSelectInteraction({
-      yioMap: this,
-    });
-
     this.#map.addInteraction(this.#userEditInteraction);
     this.#map.addInteraction(this.#userSelectInteraction);
-
-    if (this.contentMap) {
-      this.#applyContentMap();
-    }
 
     let firstMove = true;
 

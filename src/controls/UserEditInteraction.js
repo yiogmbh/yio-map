@@ -10,15 +10,11 @@ import { getLayerForMapboxSourceLayer } from '../utils.js';
 /**
  * @typedef {Object} Options
  * @property {import('../YioMap.js').YioMap} yioMap
- * @property {import('ol/Map.js').default} map ol map
  */
 
 export default class UserSelectInteraction extends Interaction {
   /** @type {import('../YioMap.js').YioMap} */
   #yioMap = null;
-
-  /** @type {import('ol/Map.js').default} */
-  #map = null;
 
   /**
    * @type {VectorLayer} layer for temporary features of the draw / modify interactions
@@ -60,7 +56,6 @@ export default class UserSelectInteraction extends Interaction {
   constructor(options) {
     super();
     this.#yioMap = options.yioMap;
-    this.#map = options.map;
 
     this.#editLayer = new VectorLayer({
       source: new VectorSource({
@@ -123,8 +118,8 @@ export default class UserSelectInteraction extends Interaction {
     }
     this.#editLayer.setMap(map);
     super.setMap(map);
-    this.modifyInteraction.setMap(this.#map);
-    this.drawInteraction.setMap(this.#map);
+    this.modifyInteraction.setMap(map);
+    this.drawInteraction.setMap(map);
   }
 
   drawInteraction;
@@ -153,7 +148,7 @@ export default class UserSelectInteraction extends Interaction {
     );
     if (active) {
       this.#editSourceLayer = sourceLayer;
-      this.#originalStyle = sourceLayer.getStyle();
+      this.#originalStyle = sourceLayer?.getStyle();
       sourceLayer.setStyle((feature, resolution) => {
         if (this.#modifiedFeatureIDs.includes(feature.get('id'))) {
           return;
