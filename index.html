@@ -37,13 +37,31 @@
       class="map"
     ></yio-map>
     <div id="info"></div>
+
+    <label for="mode-select">Mode:</label>
+    <select id="mode-select">
+      <option value="select">Select</option>
+      <option value="edit">Edit</option>
+    </select>
+
     <script>
       const map = document.getElementById('demo');
       const info = document.getElementById('info');
+
+      const interactionSelect = document.getElementById('mode-select');
+
+      interactionSelect.addEventListener('change', function () {
+        if (this.value === 'edit') {
+          map.setAttribute('editLayer', 'sites');
+        } else {
+          map.removeAttribute('editLayer');
+        }
+      });
       map.addEventListener('pointermove', () => {
         info.style.display = 'none';
       });
       map.addEventListener('click', e => {
+        console.log(e);
         const item = e.target.userSelect[0];
         info.style.display = item ? 'block' : 'none';
         if (!item) {
