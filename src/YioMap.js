@@ -3,11 +3,14 @@ import style from 'ol/ol.css?inline';
 import layerControlStyle from './controls/LayerControl.css?inline';
 
 import Map from 'ol/Map.js';
+import GeoJSON from 'ol/format/GeoJSON.js';
 import { fromLonLat, toLonLat } from 'ol/proj.js';
 import LayerControl from './controls/LayerControl.js';
 import UserSelectInteraction from './controls/UserSelectInteraction.js';
+import UserEditInteraction from './controls/UserEditInteraction.js';
 import LayerGroup from 'ol/layer/Group.js';
 import apply from 'ol-mapbox-style';
+import { getLayerForMapboxSourceLayer } from './utils.js';
 
 export class YioMap extends LitElement {
   static styles = [
@@ -29,6 +32,7 @@ export class YioMap extends LitElement {
     center: { type: Array, reflect: true },
     zoom: { type: Number, reflect: true },
     contentMap: { type: String },
+    editLayer: { type: String },
     userSelect: { attribute: false },
   };
 
@@ -43,8 +47,23 @@ export class YioMap extends LitElement {
    */
   #contentMap = '';
 
+  /**
+   * @type {string} Mapbox / Maplibre source layer name
+   */
+  #editLayer = null;
+
   /** @type {LayerGroup} */
   #contentLayer = new LayerGroup();
+
+  /**
+   * @type {UserEditInteraction}
+   */
+  #userEditInteraction = null;
+
+  /**
+   * @type {UserSelectInteraction}
+   */
+  #userSelectInteraction = null;
 
   constructor() {
     super();
@@ -69,30 +88,91 @@ export class YioMap extends LitElement {
     return this.#contentMap;
   }
 
+  set editLayer(value) {
+    const oldValue = this.#editLayer;
+    this.#editLayer = value;
+    if (!this.#userEditInteraction) {
+      return;
+    }
+    if (!value && oldValue) {
+      // when the editlayer-attribute is removed, the edit source is cleared.
+      // re-fetch all tiles, the new changes are supposed to be ready on the server.
+      const hadEdits = this.#userEditInteraction.clearEditSource();
+      if (hadEdits) {
+        getLayerForMapboxSourceLayer(this._getContentLayer(), oldValue);
+      }
+    }
+    this.#handleEditLayerChange();
+  }
+
+  get editLayer() {
+    return this.#editLayer;
+  }
+
+  #handleEditLayerChange() {
+    if (!this.#userEditInteraction) {
+      return;
+    }
+    this.#userSelectInteraction.setActive(!this.editLayer);
+    this.#userEditInteraction.setActive(!!this.editLayer);
+  }
+
+  get editFeatures() {
+    const features = this.#userEditInteraction
+      .getEditLayer()
+      .getSource()
+      .getFeatures();
+    const geojsonFormat = new GeoJSON();
+
+    return geojsonFormat.writeFeaturesObject(features, {
+      dataProjection: 'EPSG:4326',
+      featureProjection: 'EPSG:3857',
+    });
+  }
+
   #applyContentMap() {
     if (this.#map && this.#contentLayer) {
       this.#contentLayer.getLayers().clear();
+      const editOlLayer =
+        this.#userEditInteraction && this.#userEditInteraction.getEditLayer();
+      editOlLayer.getSource().clear();
+
       if (this.contentMap) {
-        apply(this.#contentLayer, this.contentMap).catch(error => {
-          console.error(error);
-        });
+        apply(this.#contentLayer, this.contentMap)
+          .then(() => {
+            // check state of attributes that need the contentLayer
+            this.#handleEditLayerChange();
+          })
+          .catch(error => {
+            console.error(error);
+          });
       }
     }
   }
 
+  /**
+   * creates the map instance and essential layers and interactions
+   */
   #createMap() {
     this.#map = new Map();
     this.#map.addControl(new LayerControl({ map: this.#map }));
 
+    this.#map.addLayer(this.#contentLayer);
+
+    this.#userEditInteraction = new UserEditInteraction({
+      yioMap: this,
+      map: this.#map,
+    });
+    this.#userSelectInteraction = new UserSelectInteraction({
+      yioMap: this,
+    });
+
+    this.#map.addInteraction(this.#userEditInteraction);
+    this.#map.addInteraction(this.#userSelectInteraction);
+
     if (this.contentMap) {
       this.#applyContentMap();
     }
-    this.#map.addLayer(this.#contentLayer);
-    this.#map.addInteraction(
-      new UserSelectInteraction({
-        yioMap: this,
-      }),
-    );
 
     let firstMove = true;
 

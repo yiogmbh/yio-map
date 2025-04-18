@@ -1,6 +1,6 @@
 import Interaction from 'ol/interaction/Interaction.js';
 import VectorLayer from 'ol/layer/Vector.js';
-import { toFeature } from 'ol/render/Feature.js';
+import RenderFeature, { toFeature } from 'ol/render/Feature.js';
 import VectorSource from 'ol/source/Vector.js';
 
 /**
@@ -67,8 +67,11 @@ export default class UserSelectInteraction extends Interaction {
     userSelectSource.clear();
     userSelectSource.addFeatures(
       features.map(
-        /** @param {import('ol/render/Feature.js').default} renderFeature */
-        renderFeature => toFeature(renderFeature),
+        /** @param {import('ol/render/Feature.js').default} featureOrRenderFeature */
+        featureOrRenderFeature =>
+          featureOrRenderFeature instanceof RenderFeature
+            ? toFeature(featureOrRenderFeature)
+            : featureOrRenderFeature,
       ),
     );
     this.#yioMap.notifyNextChange = true;
