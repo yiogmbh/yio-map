@@ -61,7 +61,7 @@
         info.style.display = 'none';
       });
       map.addEventListener('click', e => {
-        console.log(e);
+        console.log(e, map.lastClickCoordinate);
         const item = e.target.userSelect[0];
         info.style.display = item ? 'block' : 'none';
         if (!item) {

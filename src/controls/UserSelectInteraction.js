@@ -76,7 +76,7 @@ export default class UserSelectInteraction extends Interaction {
     );
     this.#yioMap.notifyNextChange = true;
     this.#yioMap.userSelect = features.map(feature => feature.getProperties());
-    this.#yioMap.dispatchEvent(new PointerEvent('click', event.originalEvent));
+    this.#yioMap._handleClick(event.originalEvent);
   }
 
   /**

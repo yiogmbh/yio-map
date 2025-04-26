@@ -130,7 +130,7 @@ export default class UserSelectInteraction extends Interaction {
    * @param {import('ol/MapBrowserEvent.js').default} event
    */
   #handleClick(event) {
-    this.#yioMap.dispatchEvent(new PointerEvent('click', event.originalEvent));
+    this.#yioMap._handleClick(event.originalEvent);
   }
 
   /**
