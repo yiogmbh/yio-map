@@ -34,6 +34,7 @@ export class YioMap extends LitElement {
     contentMap: { type: String },
     editLayer: { type: String },
     userSelect: { attribute: false },
+    lastClickCoordinate: { type: Array, attribute: false },
   };
 
   /** @type {boolean} */
@@ -85,6 +86,14 @@ export class YioMap extends LitElement {
    */
   _getContentLayer() {
     return this.#contentLayer;
+  }
+
+  /**
+   * @param {PointerEvent} event
+   */
+  _handleClick(event) {
+    this.lastClickCoordinate = toLonLat(this.#map.getEventCoordinate(event));
+    this.dispatchEvent(new PointerEvent('click', event));
   }
 
   set contentMap(value) {
