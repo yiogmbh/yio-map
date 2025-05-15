@@ -1,4 +1,4 @@
-import { Circle, Fill, Stroke, Style } from 'ol/style.js';
+import { Circle, Fill, RegularShape, Stroke, Style } from 'ol/style.js';
 
 const fill = new Fill({
   color: 'rgba(255,255,255,0.4)',
@@ -18,3 +18,12 @@ export const defaultStyles = [
     stroke: stroke,
   }),
 ];
+export const pinStyle = new Style({
+  image: new RegularShape({
+    stroke: new Stroke({ color: '#e26c68', width: 2  }),
+    points: 4,
+    radius: 10,
+    radius2: 0,
+    angle: Math.PI / 4,
+  }),
+});

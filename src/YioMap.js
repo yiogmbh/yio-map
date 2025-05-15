@@ -11,6 +11,7 @@ import UserEditInteraction from './controls/UserEditInteraction.js';
 import LayerGroup from 'ol/layer/Group.js';
 import apply from 'ol-mapbox-style';
 import { getLayerForMapboxSourceLayer } from './utils.js';
+import UserPinInteraction from './controls/UserPinInteraction.js';
 
 export class YioMap extends LitElement {
   static styles = [
@@ -66,6 +67,11 @@ export class YioMap extends LitElement {
    */
   #userSelectInteraction = null;
 
+  /**
+   * @type {UserPinInteraction}
+   */
+  #userPinInteraction = null;
+
   #contentLayerPromise = null;
 
   constructor() {
@@ -77,6 +83,9 @@ export class YioMap extends LitElement {
       yioMap: this,
     });
     this.#userSelectInteraction = new UserSelectInteraction({
+      yioMap: this,
+    });
+    this.#userPinInteraction = new UserPinInteraction({
       yioMap: this,
     });
   }
@@ -126,6 +135,7 @@ export class YioMap extends LitElement {
   async #handleEditLayerChange() {
     await this.#contentLayerPromise;
     this.#userSelectInteraction.setActive(!this.editLayer);
+    this.#userPinInteraction.setActive(!this.editLayer);
     this.#userEditInteraction.setActive(!!this.editLayer);
   }
 
@@ -168,6 +178,7 @@ export class YioMap extends LitElement {
 
     this.#map.addInteraction(this.#userEditInteraction);
     this.#map.addInteraction(this.#userSelectInteraction);
+    this.#map.addInteraction(this.#userPinInteraction);
 
     let firstMove = true;
 
