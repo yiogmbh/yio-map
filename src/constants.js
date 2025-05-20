@@ -29,6 +29,6 @@ export const pinStyle = new Style({
   image: new Icon({
     opacity: 1,
     src: 'data:image/svg+xml;utf8,' + pinSvg,
-    anchor: [0.5, 0.9],
+    anchor: [0.5, 1],
   })
 });

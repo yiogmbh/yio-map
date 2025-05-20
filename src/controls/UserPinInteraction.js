@@ -25,6 +25,7 @@ export default class UserPinInteraction extends Interaction {
   constructor(options) {
     super();
     this.#yioMap = options.yioMap;
+    this.setActive(false);
   }
 
   setMap(map) {

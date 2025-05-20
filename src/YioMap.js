@@ -36,6 +36,7 @@ export class YioMap extends LitElement {
     editLayer: { type: String },
     userSelect: { attribute: false },
     lastClickCoordinate: { type: Array, attribute: false },
+    enablePinning: { type: Boolean },
   };
 
   /** @type {boolean} */
@@ -73,6 +74,8 @@ export class YioMap extends LitElement {
   #userPinInteraction = null;
 
   #contentLayerPromise = null;
+
+  #enablePinning = false;
 
   constructor() {
     super();
@@ -132,10 +135,15 @@ export class YioMap extends LitElement {
     return this.#editLayer;
   }
 
+  set enablePinning(value) {
+    this.#enablePinning = value;
+    this.#userPinInteraction.setActive(!this.editLayer && this.#enablePinning);
+  }
+
   async #handleEditLayerChange() {
     await this.#contentLayerPromise;
     this.#userSelectInteraction.setActive(!this.editLayer);
-    this.#userPinInteraction.setActive(!this.editLayer);
+    this.#userPinInteraction.setActive(!this.editLayer && this.#enablePinning);
     this.#userEditInteraction.setActive(!!this.editLayer);
   }
 
