@@ -211,7 +211,14 @@ export default class UserSelectInteraction extends Interaction {
       }
     }
 
-    if (!this.drawInteraction.handleEvent(event)) {
+    if (
+      event.originalEvent instanceof PointerEvent &&
+      !this.drawInteraction.handleEvent(
+        /** @type {import('ol/MapBrowserEvent.js').default<PointerEvent>} */ (
+          event
+        ),
+      )
+    ) {
       propagateEvent = false;
     }
     if (propagateEvent && !this.modifyInteraction.handleEvent(event)) {

@@ -101,10 +101,12 @@ export class YioMap extends LitElement {
   }
 
   /**
-   * @param {PointerEvent} event
+   * @param {Event} event
    */
   _handleClick(event) {
-    this.lastClickCoordinate = toLonLat(this.#map.getEventCoordinate(event));
+    if (event instanceof PointerEvent) {
+      this.lastClickCoordinate = toLonLat(this.#map.getEventCoordinate(event));
+    }
     this.dispatchEvent(new PointerEvent('click', event));
   }
 
