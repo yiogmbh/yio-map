@@ -1,5 +1,6 @@
 import { it, describe, expect, vi } from 'vitest';
 import { page, userEvent } from '@vitest/browser/context';
+import styleJson from './fixtures/styleJson.js';
 import '../src/index.js';
 
 describe('YioMap', () => {
@@ -68,6 +69,20 @@ describe('YioMap', () => {
     await page.elementLocator(el).click({ position: { x: 100, y: 100 } });
     await new Promise(resolve => setTimeout(resolve, 0));
     expect(onclick).toHaveBeenCalled();
+  });
+
+  it('draw dispatches a click event with geojson in details', async () => {
+    /** @type {import('../src/YioMap.js').YioMap} */
+    const el = await fixture(
+      `<yio-map tabindex="0" contentMap='${JSON.stringify(styleJson)}' editLayer="points"></yio-map>`,
+    );
+
+    const onclick = vi.fn(() => true);
+    el.addEventListener('click', onclick);
+
+    await page.elementLocator(el).click({ position: { x: 100, y: 100 } });
+    expect(onclick).toHaveBeenCalled();
+    expect(el.editFeatures.features.length).to.equal(1);
   });
 
   it('creates content layer with mapbox style', async () => {
