@@ -61,6 +61,13 @@ export default class UserPinInteraction extends Interaction {
     }
   }
 
+  setActive(active) {
+    if (!active) {
+      this.#layer.getSource().clear();
+    }
+    super.setActive(active);
+  }
+
   /**
    * @param {import('ol/MapBrowserEvent.js').default} event
    * @returns {boolean}
