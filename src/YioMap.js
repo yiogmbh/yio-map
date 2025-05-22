@@ -137,6 +137,10 @@ export class YioMap extends LitElement {
     return this.#editLayer;
   }
 
+  get enablePinning() {
+    return this.#enablePinning;
+  }
+
   set enablePinning(value) {
     this.#enablePinning = value;
     this.#userPinInteraction.setActive(!this.editLayer && this.#enablePinning);

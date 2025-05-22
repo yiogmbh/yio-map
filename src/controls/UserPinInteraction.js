@@ -3,7 +3,6 @@ import VectorLayer from 'ol/layer/Vector.js';
 import VectorSource from 'ol/source/Vector.js';
 import { Feature } from 'ol';
 import { Point } from 'ol/geom.js';
-import { RegularShape, Stroke, Style } from 'ol/style.js';
 import { pinStyle } from '../constants.js';
 
 /**
