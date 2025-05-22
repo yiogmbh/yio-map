@@ -54,8 +54,10 @@
       interactionSelect.addEventListener('change', function () {
         if (this.value === 'edit') {
           map.setAttribute('editLayer', 'sites');
+          map.removeAttribute('enablePinning');
         } else {
           map.removeAttribute('editLayer');
+          map.setAttribute('enablePinning', true);
         }
       });
       map.addEventListener('pointermove', () => {
