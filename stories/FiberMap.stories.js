@@ -29,6 +29,15 @@ export const CenterAndZoomArguments = {
 };
 
 /** @type {import('@storybook/web-components').StoryObj} */
+export const EnablePinning = {
+  args: {
+    center: [16, 48],
+    zoom: 12,
+    enablePinning: true,
+  },
+};
+
+/** @type {import('@storybook/web-components').StoryObj} */
 export const ContentMap = {
   args: {
     center: [-73.9978486645436, 40.7155],
