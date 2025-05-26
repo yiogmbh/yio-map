@@ -34,9 +34,9 @@ export class YioMap extends LitElement {
     zoom: { type: Number, reflect: true },
     contentMap: { type: String },
     editLayer: { type: String },
-    editLayerCreate: { type: Boolean },
-    editLayerModify: { type: Boolean },
-    editLayerIDs: { type: Array },
+    editCreate: { type: Boolean },
+    editModify: { type: Boolean },
+    editModifyIDs: { type: Array },
     userSelect: { attribute: false },
     lastClickCoordinate: { type: Array, attribute: false },
     enablePinning: { type: Boolean },
@@ -81,12 +81,17 @@ export class YioMap extends LitElement {
   /**
    * @type {boolean} whether the edit layer is enabled for creating new features
    */
-  #editLayerCreate = null;
+  #editCreate = null;
 
   /**
    * @type {boolean} whether the edit layer is enabled for modifying existing features
    */
-  #editLayerModify = null;
+  #editModify = null;
+
+  /**
+   * @type {Array<string | number>} IDs of features that can be modified. If empty, all features can be modified.
+   */
+  #editModifyIDs = null;
 
   /**
    * @type {boolean} whether pinning is enabled
@@ -107,8 +112,9 @@ export class YioMap extends LitElement {
     this.#userPinInteraction = new UserPinInteraction({
       yioMap: this,
     });
-    this.editLayerCreate = true;
-    this.editLayerModify = true;
+    this.editCreate = true;
+    this.editModify = true;
+    this.editModifyIDs = [];
     this.enablePinning = false;
   }
 
@@ -156,22 +162,30 @@ export class YioMap extends LitElement {
     return this.#editLayer;
   }
 
-  set editLayerCreate(value) {
-    this.#editLayerCreate = value;
+  set editCreate(value) {
+    this.#editCreate = value;
     this.#userEditInteraction.setCreateEnabled(value);
   }
 
-  get editLayerCreate() {
-    return this.#editLayerCreate;
+  get editCreate() {
+    return this.#editCreate;
   }
 
-  set editLayerModify(value) {
-    this.#editLayerModify = value;
+  set editModify(value) {
+    this.#editModify = value;
     this.#userEditInteraction.setModifyEnabled(value);
   }
 
-  get editLayerModify() {
-    return this.#editLayerModify;
+  get editModify() {
+    return this.#editModify;
+  }
+
+  set editModifyIDs(value) {
+    this.#editModifyIDs = value;
+  }
+
+  get editModifyIDs() {
+    return this.#editModifyIDs;
   }
 
   get enablePinning() {

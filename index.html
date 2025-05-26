@@ -50,24 +50,19 @@
     <span>edit mode:</span>
     <form>
       <label>
-        <input
-          type="checkbox"
-          name="edit-mode"
-          value="editLayerCreate"
-          checked
-        />
+        <input type="checkbox" name="edit-mode" value="editCreate" checked />
         Create </label
       ><br />
       <label>
-        <input
-          type="checkbox"
-          name="edit-mode"
-          value="editLayerModify"
-          checked
-        />
+        <input type="checkbox" name="edit-mode" value="editModify" checked />
         Modify
       </label>
     </form>
+    <input
+      id="editModifyIDs"
+      value="[1402981716563881000, 1414138424277799000, 1429056567079318800]"
+      style="width: 600px"
+    />
 
     <script>
       const map = document.getElementById('demo');
@@ -94,9 +89,20 @@
         });
       });
 
+      const editModifyIDsInput = document.getElementById('editModifyIDs');
+      map.editModifyIDs = JSON.parse(editModifyIDsInput.value);
+      editModifyIDsInput.addEventListener('input', function () {
+        try {
+          map.editModifyIDs = JSON.parse(this.value);
+        } catch {
+          map.editModifyIDs = [];
+        }
+      });
+
       map.addEventListener('pointermove', () => {
         info.style.display = 'none';
       });
+
       map.addEventListener('click', e => {
         console.log(e, map.lastClickCoordinate);
         const item = e.target.userSelect[0];

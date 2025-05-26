@@ -84,6 +84,14 @@ export default class UserEditInteraction extends Interaction {
     });
     this.modifyInteraction = new Modify({
       source: this.#editLayer.getSource(),
+      condition: event => {
+        const existingFeature = event.map
+          .getFeaturesAtPixel(event.pixel)
+          .find(f => {
+            return f.get('layer') === this.#yioMap.editLayer;
+          });
+        return !!existingFeature;
+      },
     });
 
     this.modifyInteraction.on('modifystart', event => {
@@ -162,8 +170,8 @@ export default class UserEditInteraction extends Interaction {
       }
       this.#editSourceLayer = null;
     }
-    this.modifyInteraction.setActive(active && this.#yioMap.editLayerModify);
-    this.drawInteraction.setActive(active && this.#yioMap.editLayerCreate);
+    this.modifyInteraction.setActive(active && this.#yioMap.editModify);
+    this.drawInteraction.setActive(active && this.#yioMap.editCreate);
     this.#editLayer.getSource().clear();
     super.setActive(active);
   }
@@ -200,10 +208,18 @@ export default class UserEditInteraction extends Interaction {
 
     if (event.type === 'click') {
       const map = this.getMap();
-      const existingFeature = map.getFeaturesAtPixel(event.pixel).find(f => {
+      const existingFeatures = map.getFeaturesAtPixel(event.pixel).filter(f => {
         return (
           f.getGeometry().getType() === 'Point' &&
           f.get('layer') === this.#yioMap.editLayer
+        );
+      });
+
+      // restrict to features that can be modified
+      const existingFeature = existingFeatures.find(f => {
+        return (
+          this.#yioMap.editModifyIDs.length === 0 ||
+          this.#yioMap.editModifyIDs.includes(f.get('id'))
         );
       });
 
