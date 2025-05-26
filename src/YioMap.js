@@ -34,6 +34,9 @@ export class YioMap extends LitElement {
     zoom: { type: Number, reflect: true },
     contentMap: { type: String },
     editLayer: { type: String },
+    editLayerCreate: { type: Boolean },
+    editLayerModify: { type: Boolean },
+    editLayerIDs: { type: Array },
     userSelect: { attribute: false },
     lastClickCoordinate: { type: Array, attribute: false },
     enablePinning: { type: Boolean },
@@ -75,7 +78,20 @@ export class YioMap extends LitElement {
 
   #contentLayerPromise = null;
 
-  #enablePinning = false;
+  /**
+   * @type {boolean} whether the edit layer is enabled for creating new features
+   */
+  #editLayerCreate = null;
+
+  /**
+   * @type {boolean} whether the edit layer is enabled for modifying existing features
+   */
+  #editLayerModify = null;
+
+  /**
+   * @type {boolean} whether pinning is enabled
+   */
+  #enablePinning = null;
 
   constructor() {
     super();
@@ -91,6 +107,9 @@ export class YioMap extends LitElement {
     this.#userPinInteraction = new UserPinInteraction({
       yioMap: this,
     });
+    this.editLayerCreate = true;
+    this.editLayerModify = true;
+    this.enablePinning = false;
   }
 
   /**
@@ -135,6 +154,24 @@ export class YioMap extends LitElement {
 
   get editLayer() {
     return this.#editLayer;
+  }
+
+  set editLayerCreate(value) {
+    this.#editLayerCreate = value;
+    this.#userEditInteraction.setCreateEnabled(value);
+  }
+
+  get editLayerCreate() {
+    return this.#editLayerCreate;
+  }
+
+  set editLayerModify(value) {
+    this.#editLayerModify = value;
+    this.#userEditInteraction.setModifyEnabled(value);
+  }
+
+  get editLayerModify() {
+    return this.#editLayerModify;
   }
 
   get enablePinning() {

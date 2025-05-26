@@ -12,7 +12,7 @@ import { getLayerForMapboxSourceLayer } from '../utils.js';
  * @property {import('../YioMap.js').YioMap} yioMap
  */
 
-export default class UserSelectInteraction extends Interaction {
+export default class UserEditInteraction extends Interaction {
   /** @type {import('../YioMap.js').YioMap} */
   #yioMap = null;
 
@@ -162,10 +162,24 @@ export default class UserSelectInteraction extends Interaction {
       }
       this.#editSourceLayer = null;
     }
-    this.modifyInteraction.setActive(active);
-    this.drawInteraction.setActive(active);
+    this.modifyInteraction.setActive(active && this.#yioMap.editLayerModify);
+    this.drawInteraction.setActive(active && this.#yioMap.editLayerCreate);
     this.#editLayer.getSource().clear();
     super.setActive(active);
+  }
+
+  setCreateEnabled(enabled) {
+    if (!this.drawInteraction) {
+      return;
+    }
+    this.drawInteraction.setActive(this.getActive() && enabled);
+  }
+
+  setModifyEnabled(enabled) {
+    if (!this.modifyInteraction) {
+      return;
+    }
+    this.modifyInteraction.setActive(this.getActive() && enabled);
   }
 
   /**
@@ -213,6 +227,7 @@ export default class UserSelectInteraction extends Interaction {
 
     if (
       event.originalEvent instanceof PointerEvent &&
+      this.drawInteraction.getActive() &&
       !this.drawInteraction.handleEvent(
         /** @type {import('ol/MapBrowserEvent.js').default<PointerEvent>} */ (
           event
@@ -221,7 +236,11 @@ export default class UserSelectInteraction extends Interaction {
     ) {
       propagateEvent = false;
     }
-    if (propagateEvent && !this.modifyInteraction.handleEvent(event)) {
+    if (
+      propagateEvent &&
+      this.modifyInteraction.getActive() &&
+      !this.modifyInteraction.handleEvent(event)
+    ) {
       propagateEvent = false;
     }
     return propagateEvent;

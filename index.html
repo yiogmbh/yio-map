@@ -44,6 +44,30 @@
       <option value="select">Select</option>
       <option value="edit">Edit</option>
     </select>
+    <br />
+    <br />
+
+    <span>edit mode:</span>
+    <form>
+      <label>
+        <input
+          type="checkbox"
+          name="edit-mode"
+          value="editLayerCreate"
+          checked
+        />
+        Create </label
+      ><br />
+      <label>
+        <input
+          type="checkbox"
+          name="edit-mode"
+          value="editLayerModify"
+          checked
+        />
+        Modify
+      </label>
+    </form>
 
     <script>
       const map = document.getElementById('demo');
@@ -60,6 +84,16 @@
           map.setAttribute('enablePinning', true);
         }
       });
+
+      const editModeOptions = document.querySelectorAll(
+        'input[name="edit-mode"]',
+      );
+      editModeOptions.forEach(cb => {
+        cb.addEventListener('change', function () {
+          map[cb.value] = cb.checked;
+        });
+      });
+
       map.addEventListener('pointermove', () => {
         info.style.display = 'none';
       });
