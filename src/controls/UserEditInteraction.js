@@ -164,11 +164,14 @@ export default class UserEditInteraction extends Interaction {
         return this.#originalStyle(feature, resolution);
       });
       this.#setStyle();
+      this.#pointerMoveListener = this.#pointermoveCallback.bind(this);
+      this.getMap().on('pointermove', this.#pointerMoveListener);
     } else {
       if (this.#originalStyle) {
         this.#editSourceLayer.setStyle(this.#originalStyle);
       }
       this.#editSourceLayer = null;
+      this.getMap().un('pointermove', this.#pointerMoveListener);
     }
     this.modifyInteraction.setActive(active && this.#yioMap.editModify);
     this.drawInteraction.setActive(active && this.#yioMap.editCreate);
@@ -197,6 +200,45 @@ export default class UserEditInteraction extends Interaction {
     this.#editLayer.setStyle((feature, resolution) => {
       return this.#originalStyle(feature, resolution) || defaultStyles;
     });
+  }
+
+  #pointerMoveListener = null;
+
+  #pointermoveCallback(e) {
+    const map = this.getMap();
+    if (!this.modifyInteraction.getActive()) {
+      map.getTargetElement().style.cursor = '';
+      return null;
+    }
+    const hasEligibleFeature = !!this.#getEligibleFeatureAtPixel(e.pixel);
+    e.target.getTargetElement().style.cursor = hasEligibleFeature
+      ? 'pointer'
+      : '';
+  }
+
+  /**
+   * gets the feature at the given pixel that is eligible for modification.
+   * @param {import("ol/pixel.js").Pixel} pixel
+   * @returns {import('ol/Feature.js').FeatureLike | null}
+   */
+  #getEligibleFeatureAtPixel(pixel) {
+    const map = this.getMap();
+    const existingFeatures = map
+      .getFeaturesAtPixel(pixel)
+      .filter(f => {
+        return (
+          f.getGeometry().getType() === 'Point' &&
+          f.get('layer') === this.#yioMap.editLayer
+        );
+      })
+      .filter(f => {
+        return (
+          // filter by IDs that can be modified
+          this.#yioMap.editModifyIDs.length === 0 ||
+          this.#yioMap.editModifyIDs.includes(f.get('id'))
+        );
+      });
+    return existingFeatures.length ? existingFeatures[0] : null;
   }
 
   /**
