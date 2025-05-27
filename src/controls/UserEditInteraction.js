@@ -74,6 +74,11 @@ export default class UserEditInteraction extends Interaction {
         return !existingFeature;
       },
       type: 'Point',
+      style: () => {
+        return this.getMap().getTargetElement().style.cursor === 'pointer'
+          ? null
+          : defaultStyles;
+      },
     });
     this.drawInteraction.on('drawend', event => {
       const feature = event.feature;
@@ -91,6 +96,11 @@ export default class UserEditInteraction extends Interaction {
             return f.get('layer') === this.#yioMap.editLayer;
           });
         return !!existingFeature;
+      },
+      style: () => {
+        return this.getMap().getTargetElement().style.cursor === 'pointer'
+          ? null
+          : defaultStyles;
       },
     });
 
