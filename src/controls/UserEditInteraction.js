@@ -160,10 +160,16 @@ export default class UserEditInteraction extends Interaction {
     if (!this.modifyInteraction || !this.drawInteraction) {
       return;
     }
-    const sourceLayer = getLayerForMapboxSourceLayer(
-      this.#yioMap._getContentLayer(),
-      this.#yioMap.editLayer,
-    );
+    let sourceLayer;
+    try {
+      sourceLayer = getLayerForMapboxSourceLayer(
+        this.#yioMap._getContentLayer(),
+        this.#yioMap.editLayer,
+      );
+    } catch (e) {
+      console.error(e);
+      return;
+    }
     if (active) {
       this.#editSourceLayer = sourceLayer;
       this.#originalStyle = sourceLayer?.getStyle();
@@ -175,13 +181,13 @@ export default class UserEditInteraction extends Interaction {
       });
       this.#setStyle();
       this.#pointerMoveListener = this.#pointermoveCallback.bind(this);
-      this.getMap().on('pointermove', this.#pointerMoveListener);
+      this.getMap()?.on('pointermove', this.#pointerMoveListener);
     } else {
       if (this.#originalStyle) {
         this.#editSourceLayer.setStyle(this.#originalStyle);
       }
       this.#editSourceLayer = null;
-      this.getMap().un('pointermove', this.#pointerMoveListener);
+      this.getMap()?.un('pointermove', this.#pointerMoveListener);
     }
     this.modifyInteraction.setActive(active && this.#yioMap.editModify);
     this.drawInteraction.setActive(active && this.#yioMap.editCreate);

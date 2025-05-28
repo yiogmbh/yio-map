@@ -101,3 +101,129 @@ export const ContentMap = {
     },
   },
 };
+
+/** @type {import('@storybook/web-components').StoryObj} */
+export const CreateFeatures = {
+  args: {
+    center: [15.6, 48.4107],
+    zoom: 15,
+    contentMap: {
+      version: 8,
+      sources: {
+        mockSource: {
+          type: 'vector',
+          minzoom: 14,
+          maxzoom: 15,
+          scheme: 'xyz',
+          tiles: ['/tiles/14/{x}/{y}.pbf'],
+        },
+      },
+      layers: [
+        {
+          id: 'sitesA',
+          minzoom: 14,
+          maxzoom: 15,
+          type: 'circle',
+          source: 'mockSource',
+          'source-layer': 'layer_a',
+          paint: {
+            'circle-radius': 7.0,
+            'circle-color': '#77DDF9',
+            'circle-stroke-color': '#ffffff',
+            'circle-stroke-width': 1,
+            'circle-opacity': 1,
+          },
+          layout: {},
+        },
+        {
+          id: 'sitesB',
+          minzoom: 14,
+          maxzoom: 15,
+          type: 'circle',
+          source: 'mockSource',
+          'source-layer': 'layer_b',
+          paint: {
+            'circle-radius': 7.0,
+            'circle-color': '#7700F9',
+            'circle-stroke-color': '#ffffff',
+            'circle-stroke-width': 1,
+            'circle-opacity': 1,
+          },
+          layout: {},
+        },
+      ],
+    },
+  },
+};
+
+CreateFeatures.play = async ({ canvasElement }) => {
+  const el = canvasElement.querySelector('yio-map');
+  if (el) {
+    el.setAttribute('editLayer', 'layer_a');
+    // @ts-ignore
+    el.editModify = false;
+  }
+};
+
+/** @type {import('@storybook/web-components').StoryObj} */
+export const ModifyFeatures = {
+  args: {
+    center: [15.6, 48.4107],
+    zoom: 15,
+    contentMap: {
+      version: 8,
+      sources: {
+        mockSource: {
+          type: 'vector',
+          minzoom: 14,
+          maxzoom: 15,
+          scheme: 'xyz',
+          tiles: ['/tiles/14/{x}/{y}.pbf'],
+        },
+      },
+      layers: [
+        {
+          id: 'sitesA',
+          minzoom: 14,
+          maxzoom: 15,
+          type: 'circle',
+          source: 'mockSource',
+          'source-layer': 'layer_a',
+          paint: {
+            'circle-radius': 7.0,
+            'circle-color': '#77DDF9',
+            'circle-stroke-color': '#ffffff',
+            'circle-stroke-width': 1,
+            'circle-opacity': 1,
+          },
+          layout: {},
+        },
+        {
+          id: 'sitesB',
+          minzoom: 14,
+          maxzoom: 15,
+          type: 'circle',
+          source: 'mockSource',
+          'source-layer': 'layer_b',
+          paint: {
+            'circle-radius': 7.0,
+            'circle-color': '#7700F9',
+            'circle-stroke-color': '#ffffff',
+            'circle-stroke-width': 1,
+            'circle-opacity': 1,
+          },
+          layout: {},
+        },
+      ],
+    },
+  },
+};
+
+ModifyFeatures.play = async ({ canvasElement }) => {
+  const el = canvasElement.querySelector('yio-map');
+  if (el) {
+    el.setAttribute('editLayer', 'layer_a');
+    // @ts-ignore
+    el.editCreate = false;
+  }
+};
