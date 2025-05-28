@@ -12,7 +12,7 @@ import { getLayerForMapboxSourceLayer } from '../utils.js';
  * @property {import('../YioMap.js').YioMap} yioMap
  */
 
-export default class UserSelectInteraction extends Interaction {
+export default class UserEditInteraction extends Interaction {
   /** @type {import('../YioMap.js').YioMap} */
   #yioMap = null;
 
@@ -66,14 +66,18 @@ export default class UserSelectInteraction extends Interaction {
     this.drawInteraction = new Draw({
       source: this.#editLayer.getSource(),
       condition: event => {
-        const existingFeature = event.map
-          .getFeaturesAtPixel(event.pixel)
-          .find(f => {
-            return f.get('layer') === this.#yioMap.editLayer;
-          });
+        if (!this.modifyInteraction.getActive()) {
+          return true;
+        }
+        const existingFeature = this.#getEligibleFeatureAtPixel(event.pixel);
         return !existingFeature;
       },
       type: 'Point',
+      style: () => {
+        return this.getMap().getTargetElement().style.cursor === 'pointer'
+          ? null
+          : defaultStyles;
+      },
     });
     this.drawInteraction.on('drawend', event => {
       const feature = event.feature;
@@ -84,6 +88,19 @@ export default class UserSelectInteraction extends Interaction {
     });
     this.modifyInteraction = new Modify({
       source: this.#editLayer.getSource(),
+      condition: event => {
+        const existingFeature = event.map
+          .getFeaturesAtPixel(event.pixel)
+          .find(f => {
+            return f.get('layer') === this.#yioMap.editLayer;
+          });
+        return !!existingFeature;
+      },
+      style: () => {
+        return this.getMap().getTargetElement().style.cursor === 'pointer'
+          ? null
+          : defaultStyles;
+      },
     });
 
     this.modifyInteraction.on('modifystart', event => {
@@ -142,10 +159,16 @@ export default class UserSelectInteraction extends Interaction {
     if (!this.modifyInteraction || !this.drawInteraction) {
       return;
     }
-    const sourceLayer = getLayerForMapboxSourceLayer(
-      this.#yioMap._getContentLayer(),
-      this.#yioMap.editLayer,
-    );
+    let sourceLayer;
+    try {
+      sourceLayer = getLayerForMapboxSourceLayer(
+        this.#yioMap._getContentLayer(),
+        this.#yioMap.editLayer,
+      );
+    } catch (e) {
+      console.error(e);
+      return;
+    }
     if (active) {
       this.#editSourceLayer = sourceLayer;
       this.#originalStyle = sourceLayer?.getStyle();
@@ -156,16 +179,43 @@ export default class UserSelectInteraction extends Interaction {
         return this.#originalStyle(feature, resolution);
       });
       this.#setStyle();
+      this.#pointerMoveListener = e => {
+        const map = this.getMap();
+        if (!this.modifyInteraction.getActive()) {
+          map.getTargetElement().style.cursor = '';
+          return null;
+        }
+        const hasEligibleFeature = !!this.#getEligibleFeatureAtPixel(e.pixel);
+        e.target.getTargetElement().style.cursor = hasEligibleFeature
+          ? 'pointer'
+          : '';
+      };
+      this.getMap()?.on('pointermove', this.#pointerMoveListener);
     } else {
       if (this.#originalStyle) {
         this.#editSourceLayer.setStyle(this.#originalStyle);
       }
       this.#editSourceLayer = null;
+      this.getMap()?.un('pointermove', this.#pointerMoveListener);
     }
-    this.modifyInteraction.setActive(active);
-    this.drawInteraction.setActive(active);
+    this.modifyInteraction.setActive(active && this.#yioMap.editModify);
+    this.drawInteraction.setActive(active && this.#yioMap.editCreate);
     this.#editLayer.getSource().clear();
     super.setActive(active);
+  }
+
+  setCreateEnabled(enabled) {
+    if (!this.drawInteraction) {
+      return;
+    }
+    this.drawInteraction.setActive(this.getActive() && enabled);
+  }
+
+  setModifyEnabled(enabled) {
+    if (!this.modifyInteraction) {
+      return;
+    }
+    this.modifyInteraction.setActive(this.getActive() && enabled);
   }
 
   /**
@@ -177,6 +227,33 @@ export default class UserSelectInteraction extends Interaction {
     });
   }
 
+  #pointerMoveListener = null;
+
+  /**
+   * gets the feature at the given pixel that is eligible for modification.
+   * @param {import("ol/pixel.js").Pixel} pixel
+   * @returns {import('ol/Feature.js').FeatureLike | null}
+   */
+  #getEligibleFeatureAtPixel(pixel) {
+    const map = this.getMap();
+    const existingFeatures = map
+      .getFeaturesAtPixel(pixel)
+      .filter(f => {
+        return (
+          f.getGeometry().getType() === 'Point' &&
+          f.get('layer') === this.#yioMap.editLayer
+        );
+      })
+      .filter(f => {
+        return (
+          // filter by IDs that can be modified
+          this.#yioMap.editModifyIDs.length === 0 ||
+          this.#yioMap.editModifyIDs.includes(f.get('id'))
+        );
+      });
+    return existingFeatures.length ? existingFeatures[0] : null;
+  }
+
   /**
    * @param {import('ol/MapBrowserEvent.js').default} event
    * @returns {boolean}
@@ -185,15 +262,8 @@ export default class UserSelectInteraction extends Interaction {
     let propagateEvent = true;
 
     if (event.type === 'click') {
-      const map = this.getMap();
-      const existingFeature = map.getFeaturesAtPixel(event.pixel).find(f => {
-        return (
-          f.getGeometry().getType() === 'Point' &&
-          f.get('layer') === this.#yioMap.editLayer
-        );
-      });
-
-      if (existingFeature) {
+      const existingFeature = this.#getEligibleFeatureAtPixel(event.pixel);
+      if (existingFeature && this.modifyInteraction.getActive()) {
         const existingFeatureId = existingFeature.get('id');
         if (!this.#modifiedFeatureIDs.includes(existingFeatureId)) {
           this.#modifiedFeatureIDs.push(existingFeatureId);
@@ -213,6 +283,7 @@ export default class UserSelectInteraction extends Interaction {
 
     if (
       event.originalEvent instanceof PointerEvent &&
+      this.drawInteraction.getActive() &&
       !this.drawInteraction.handleEvent(
         /** @type {import('ol/MapBrowserEvent.js').default<PointerEvent>} */ (
           event
@@ -221,7 +292,11 @@ export default class UserSelectInteraction extends Interaction {
     ) {
       propagateEvent = false;
     }
-    if (propagateEvent && !this.modifyInteraction.handleEvent(event)) {
+    if (
+      propagateEvent &&
+      this.modifyInteraction.getActive() &&
+      !this.modifyInteraction.handleEvent(event)
+    ) {
       propagateEvent = false;
     }
     return propagateEvent;
