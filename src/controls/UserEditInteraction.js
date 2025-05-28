@@ -66,11 +66,10 @@ export default class UserEditInteraction extends Interaction {
     this.drawInteraction = new Draw({
       source: this.#editLayer.getSource(),
       condition: event => {
-        const existingFeature = event.map
-          .getFeaturesAtPixel(event.pixel)
-          .find(f => {
-            return f.get('layer') === this.#yioMap.editLayer;
-          });
+        if (!this.modifyInteraction.getActive()) {
+          return true;
+        }
+        const existingFeature = this.#getEligibleFeatureAtPixel(event.pixel);
         return !existingFeature;
       },
       type: 'Point',
@@ -180,7 +179,17 @@ export default class UserEditInteraction extends Interaction {
         return this.#originalStyle(feature, resolution);
       });
       this.#setStyle();
-      this.#pointerMoveListener = this.#pointermoveCallback.bind(this);
+      this.#pointerMoveListener = e => {
+        const map = this.getMap();
+        if (!this.modifyInteraction.getActive()) {
+          map.getTargetElement().style.cursor = '';
+          return null;
+        }
+        const hasEligibleFeature = !!this.#getEligibleFeatureAtPixel(e.pixel);
+        e.target.getTargetElement().style.cursor = hasEligibleFeature
+          ? 'pointer'
+          : '';
+      };
       this.getMap()?.on('pointermove', this.#pointerMoveListener);
     } else {
       if (this.#originalStyle) {
@@ -220,18 +229,6 @@ export default class UserEditInteraction extends Interaction {
 
   #pointerMoveListener = null;
 
-  #pointermoveCallback(e) {
-    const map = this.getMap();
-    if (!this.modifyInteraction.getActive()) {
-      map.getTargetElement().style.cursor = '';
-      return null;
-    }
-    const hasEligibleFeature = !!this.#getEligibleFeatureAtPixel(e.pixel);
-    e.target.getTargetElement().style.cursor = hasEligibleFeature
-      ? 'pointer'
-      : '';
-  }
-
   /**
    * gets the feature at the given pixel that is eligible for modification.
    * @param {import("ol/pixel.js").Pixel} pixel
@@ -265,23 +262,8 @@ export default class UserEditInteraction extends Interaction {
     let propagateEvent = true;
 
     if (event.type === 'click') {
-      const map = this.getMap();
-      const existingFeatures = map.getFeaturesAtPixel(event.pixel).filter(f => {
-        return (
-          f.getGeometry().getType() === 'Point' &&
-          f.get('layer') === this.#yioMap.editLayer
-        );
-      });
-
-      // restrict to features that can be modified
-      const existingFeature = existingFeatures.find(f => {
-        return (
-          this.#yioMap.editModifyIDs.length === 0 ||
-          this.#yioMap.editModifyIDs.includes(f.get('id'))
-        );
-      });
-
-      if (existingFeature) {
+      const existingFeature = this.#getEligibleFeatureAtPixel(event.pixel);
+      if (existingFeature && this.modifyInteraction.getActive()) {
         const existingFeatureId = existingFeature.get('id');
         if (!this.#modifiedFeatureIDs.includes(existingFeatureId)) {
           this.#modifiedFeatureIDs.push(existingFeatureId);
