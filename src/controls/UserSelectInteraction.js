@@ -22,6 +22,12 @@ export default class UserSelectInteraction extends Interaction {
   constructor(options) {
     super();
     this.#yioMap = options.yioMap;
+    const source = this.#layer.getSource();
+    source.addEventListener('change', e => {
+      this.#yioMap.userSelect = source
+        .getFeatures()
+        .map(feature => feature.getProperties());
+    });
   }
 
   setMap(map) {
@@ -53,6 +59,7 @@ export default class UserSelectInteraction extends Interaction {
 
   /**
    * @param {import('ol/MapBrowserEvent.js').default} event
+   * @returns {boolean} Propageate the event further
    */
   #handleClick(event) {
     const map = this.getMap();
@@ -75,8 +82,8 @@ export default class UserSelectInteraction extends Interaction {
       ),
     );
     this.#yioMap.notifyNextChange = true;
-    this.#yioMap.userSelect = features.map(feature => feature.getProperties());
     this.#yioMap._handleClick(event.originalEvent);
+    return features.length === 0; // Propagate the event if no features were clicked
   }
 
   /**
@@ -88,8 +95,18 @@ export default class UserSelectInteraction extends Interaction {
       this.#handlePointerMove(event);
     }
     if (event.type === 'click') {
-      this.#handleClick(event);
+      return this.#handleClick(event);
     }
     return true;
+  }
+
+  setActive(active) {
+    super.setActive(active);
+    if (!active) {
+      this.#layer.getSource().clear();
+      if (this.#yioMap) {
+        this.#yioMap.userSelect.length = 0;
+      }
+    }
   }
 }

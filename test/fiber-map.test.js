@@ -59,9 +59,9 @@ describe('YioMap', () => {
     expect(onchange).toHaveBeenCalled();
   });
 
-  it('dispatches a click event when user clicks on the map', async () => {
+  it('dispatches a click event with enableSelect', async () => {
     /** @type {import('../src/YioMap.js').YioMap} */
-    const el = await fixture('<yio-map tabindex="0"></yio-map>');
+    const el = await fixture('<yio-map enableSelect tabindex="0"></yio-map>');
 
     const onclick = vi.fn(() => true);
     el.addEventListener('click', onclick);
@@ -71,10 +71,10 @@ describe('YioMap', () => {
     expect(onclick).toHaveBeenCalled();
   });
 
-  it('draw dispatches a click event with geojson in details', async () => {
+  it('draw dispatches a click event when editFeatures is updated with a user click', async () => {
     /** @type {import('../src/YioMap.js').YioMap} */
     const el = await fixture(
-      `<yio-map tabindex="0" contentMap='${JSON.stringify(styleJson)}' editLayer="points"></yio-map>`,
+      `<yio-map tabindex="0" contentMap='${JSON.stringify(styleJson)}' editCreate="points"></yio-map>`,
     );
 
     const onclick = vi.fn(() => true);
