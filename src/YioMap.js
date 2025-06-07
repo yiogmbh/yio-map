@@ -33,13 +33,13 @@ export class YioMap extends LitElement {
     center: { type: Array, reflect: true },
     zoom: { type: Number, reflect: true },
     contentMap: { type: String },
-    editLayer: { type: String },
-    editCreate: { type: Boolean },
-    editModify: { type: Boolean },
-    editModifyIDs: { type: Array },
-    userSelect: { attribute: false },
-    lastClickCoordinate: { type: Array, attribute: false },
+    editCreate: { type: String },
+    editModify: { type: Array },
     enablePinning: { type: Boolean },
+    enableSelect: { type: Boolean },
+    editFeatures: { attribute: false },
+    lastClickCoordinate: { type: Array, attribute: false },
+    userSelect: { attribute: false },
   };
 
   /** @type {boolean} */
@@ -52,11 +52,6 @@ export class YioMap extends LitElement {
    * @type {string} Mapbox / MapLibre style, or URL to style
    */
   #contentMap = '';
-
-  /**
-   * @type {string} Mapbox / Maplibre source layer name
-   */
-  #editLayer = null;
 
   /** @type {LayerGroup} */
   #contentLayer = new LayerGroup();
@@ -79,24 +74,24 @@ export class YioMap extends LitElement {
   #contentLayerPromise = null;
 
   /**
-   * @type {boolean} whether the edit layer is enabled for creating new features
+   * @type {string} Source layer to create features on. If not set, feature creation is disabled.
    */
   #editCreate = null;
 
   /**
-   * @type {boolean} whether the edit layer is enabled for modifying existing features
+   * @type {Array<number>} Feature ids enabled for editing. If not set, feature modification is disabled.
    */
   #editModify = null;
 
   /**
-   * @type {Array<string | number>} IDs of features that can be modified. If empty, all features can be modified.
+   * @type {boolean} User selection is enabled.
    */
-  #editModifyIDs = null;
+  #enableUserSelect = false;
 
   /**
    * @type {boolean} whether pinning is enabled
    */
-  #enablePinning = null;
+  #enablePinning = false;
 
   constructor() {
     super();
@@ -112,10 +107,6 @@ export class YioMap extends LitElement {
     this.#userPinInteraction = new UserPinInteraction({
       yioMap: this,
     });
-    this.editCreate = true;
-    this.editModify = true;
-    this.editModifyIDs = [];
-    this.enablePinning = false;
   }
 
   /**
@@ -123,6 +114,13 @@ export class YioMap extends LitElement {
    */
   _getContentLayer() {
     return this.#contentLayer;
+  }
+
+  /**
+   * @returns {Promise<LayerGroup>}
+   */
+  _getContentLayerPromise() {
+    return this.#contentLayerPromise;
   }
 
   /**
@@ -135,40 +133,22 @@ export class YioMap extends LitElement {
     this.dispatchEvent(new PointerEvent('click', event));
   }
 
+  get contentMap() {
+    return this.#contentMap;
+  }
+
   set contentMap(value) {
     this.#contentMap = value;
     this.#applyContentMap();
   }
 
-  get contentMap() {
-    return this.#contentMap;
-  }
-
-  set editLayer(value) {
-    const oldValue = this.#editLayer;
-    this.#editLayer = value;
-    if (!value && oldValue) {
-      // when the editlayer-attribute is removed, the edit source is cleared.
-      // re-fetch all tiles, the new changes are supposed to be ready on the server.
-      const hadEdits = this.#userEditInteraction.clearEditSource();
-      if (hadEdits) {
-        getLayerForMapboxSourceLayer(this._getContentLayer(), oldValue);
-      }
-    }
-    this.#handleEditLayerChange();
-  }
-
-  get editLayer() {
-    return this.#editLayer;
+  get editCreate() {
+    return this.#editCreate;
   }
 
   set editCreate(value) {
     this.#editCreate = value;
     this.#userEditInteraction.setCreateEnabled(value);
-  }
-
-  get editCreate() {
-    return this.#editCreate;
   }
 
   set editModify(value) {
@@ -180,12 +160,13 @@ export class YioMap extends LitElement {
     return this.#editModify;
   }
 
-  set editModifyIDs(value) {
-    this.#editModifyIDs = value;
+  get enableSelect() {
+    return this.#enableUserSelect;
   }
 
-  get editModifyIDs() {
-    return this.#editModifyIDs;
+  set enableSelect(value) {
+    this.#enableUserSelect = value;
+    this.#userSelectInteraction.setActive(!!this.#enableUserSelect);
   }
 
   get enablePinning() {
@@ -194,21 +175,17 @@ export class YioMap extends LitElement {
 
   set enablePinning(value) {
     this.#enablePinning = value;
-    this.#userPinInteraction.setActive(!this.editLayer && this.#enablePinning);
-  }
-
-  async #handleEditLayerChange() {
-    await this.#contentLayerPromise;
-    this.#userSelectInteraction.setActive(!this.editLayer);
-    this.#userPinInteraction.setActive(!this.editLayer && this.#enablePinning);
-    this.#userEditInteraction.setActive(!!this.editLayer);
+    this.#userPinInteraction.setActive(!!this.#enablePinning);
   }
 
   get editFeatures() {
     const features = this.#userEditInteraction
       .getEditLayer()
-      .getSource()
-      .getFeatures();
+      ?.getSource()
+      ?.getFeatures();
+    if (!features) {
+      return null;
+    }
     const geojsonFormat = new GeoJSON();
 
     return geojsonFormat.writeFeaturesObject(features, {
@@ -241,9 +218,12 @@ export class YioMap extends LitElement {
 
     this.#map.addLayer(this.#contentLayer);
 
-    this.#map.addInteraction(this.#userEditInteraction);
     this.#map.addInteraction(this.#userSelectInteraction);
+    this.#userSelectInteraction.setActive(this.#enableUserSelect);
     this.#map.addInteraction(this.#userPinInteraction);
+    this.#userPinInteraction.setActive(this.#enablePinning);
+    this.#map.addInteraction(this.#userEditInteraction);
+    this.#userEditInteraction.setActive(!!this.editCreate || !!this.editModify);
 
     let firstMove = true;
 

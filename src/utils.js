@@ -1,12 +1,12 @@
-import { getLayer } from 'ol-mapbox-style';
+import { getLayer, getLayers } from 'ol-mapbox-style';
 import { Point } from 'ol/geom.js';
 import RenderFeature from 'ol/render/Feature.js';
 
 /**
- * gets the ol layer for a given mapbox source-layer
+ * gets the first ol layer for a given mapbox source-layer
  * @param {import("ol/layer/Group.js").default} contentLayer
  * @param {string} mapboxSourceLayer mapbox source layer id
- * @returns {import("ol/layer/Vector.js").default | import("ol/layer/VectorTile.js").default}
+ * @returns {import("ol/layer/Vector.js").default | import("ol/layer/VectorTile.js").default|null}
  */
 export function getLayerForMapboxSourceLayer(contentLayer, mapboxSourceLayer) {
   if (!mapboxSourceLayer) {
@@ -22,9 +22,7 @@ export function getLayerForMapboxSourceLayer(contentLayer, mapboxSourceLayer) {
   });
 
   if (!mapboxLayer) {
-    throw new Error(
-      `<yio-map>: Invalid value for "editLayer". Could not find "${mapboxSourceLayer}" as source-layer in the content map.`,
-    );
+    return null;
   }
   return /** @type {import("ol/layer/Vector.js").default | import("ol/layer/VectorTile.js").default} */ (
     getLayer(contentLayer, mapboxLayer.id)

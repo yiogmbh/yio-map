@@ -35,88 +35,73 @@
       contentMap="/api/v2/pip/tiles/resources/style.json"
       zoom="16.9"
       class="map"
+      enableSelect
       enablePinning
     ></yio-map>
     <div id="info"></div>
 
-    <label for="mode-select">Mode:</label>
-    <select id="mode-select">
-      <option value="select">Select</option>
-      <option value="edit">Edit</option>
-    </select>
-    <br />
-    <br />
-
-    <span>edit mode:</span>
+    <h4>Attributes:</h4>
     <form>
       <label>
-        <input type="checkbox" name="edit-mode" value="editCreate" checked />
-        Create </label
+        <input type="checkbox" name="attribute" value="enablePinning" checked />
+        enablePinning</label
       ><br />
       <label>
-        <input type="checkbox" name="edit-mode" value="editModify" checked />
-        Modify
+        <input type="checkbox" name="attribute" value="enableSelect" checked />
+        enableSelect</label
+      ><br />
+      <label>
+        <input type="checkbox" name="attribute" value="editCreate" />
+        editCreate
       </label>
+      <input id="editCreate" value="sites" style="width: 200px" /><br />
+      <label>
+        <input type="checkbox" name="attribute" value="editModify" />
+        editModify
+      </label>
+      <input
+        id="editModify"
+        value="[1402981716563881000, 1414138424277799000, 1429056567079318800]"
+        style="width: 600px"
+      />
     </form>
-    <input
-      id="editModifyIDs"
-      value="[1402981716563881000, 1414138424277799000, 1429056567079318800]"
-      style="width: 600px"
-    />
 
     <script>
       const map = document.getElementById('demo');
       const info = document.getElementById('info');
 
-      const interactionSelect = document.getElementById('mode-select');
-
-      interactionSelect.addEventListener('change', function () {
-        if (this.value === 'edit') {
-          map.setAttribute('editLayer', 'sites');
-          map.removeAttribute('enablePinning');
-        } else {
-          map.removeAttribute('editLayer');
-          map.setAttribute('enablePinning', true);
-        }
-      });
-
-      const editModeOptions = document.querySelectorAll(
-        'input[name="edit-mode"]',
-      );
-      editModeOptions.forEach(cb => {
+      const attributes = document.querySelectorAll('input[name="attribute"]');
+      attributes.forEach(cb => {
         cb.addEventListener('change', function () {
-          map[cb.value] = cb.checked;
+          if (cb.checked) {
+            const value = document.getElementById(cb.value)?.value || '';
+            map.setAttribute(cb.value, value);
+          } else {
+            map.removeAttribute(cb.value);
+          }
         });
-      });
-
-      const editModifyIDsInput = document.getElementById('editModifyIDs');
-      map.editModifyIDs = JSON.parse(editModifyIDsInput.value);
-      editModifyIDsInput.addEventListener('input', function () {
-        try {
-          map.editModifyIDs = JSON.parse(this.value);
-        } catch {
-          map.editModifyIDs = [];
-        }
       });
 
       map.addEventListener('pointermove', () => {
         info.style.display = 'none';
       });
 
-      map.addEventListener('click', e => {
-        console.log(e, map.lastClickCoordinate);
+      map.addEventListener('pointerup', e => {
         const item = e.target.userSelect[0];
         info.style.display = item ? 'block' : 'none';
-        if (!item) {
-          return;
+        if (item) {
+          let text = '';
+          for (const key in item) {
+            text += `${key}: ${item[key]}\n`;
+          }
+          info.innerText = text;
+          info.style.left = `${e.clientX - info.clientWidth / 2}px`;
+          info.style.top = `${e.clientY + 10}px`;
         }
-        let text = '';
-        for (const key in item) {
-          text += `${key}: ${item[key]}\n`;
-        }
-        info.innerText = text;
-        info.style.left = `${e.clientX - info.clientWidth / 2}px`;
-        info.style.top = `${e.clientY + 10}px`;
+        console.log('lastClickCoordinate', map.lastClickCoordinate);
+        console.log('editFeatures', e.target.editFeatures);
+        console.log('userSelect', e.target.userSelect);
+        console.log('[event]', e);
       });
     </script>
   </body>

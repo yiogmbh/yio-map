@@ -6,6 +6,14 @@ import Draw from 'ol/interaction/Draw.js';
 import Modify from 'ol/interaction/Modify.js';
 import { defaultStyles } from '../constants.js';
 import { getLayerForMapboxSourceLayer } from '../utils.js';
+import {
+  addMapboxLayer,
+  getLayer,
+  getLayers,
+  getSource,
+} from 'ol-mapbox-style';
+import { noModifierKeys, primaryAction } from 'ol/events/condition.js';
+import VectorTileLayer from 'ol/layer/VectorTile.js';
 
 /**
  * @typedef {Object} Options
@@ -13,42 +21,65 @@ import { getLayerForMapboxSourceLayer } from '../utils.js';
  */
 
 export default class UserEditInteraction extends Interaction {
-  /** @type {import('../YioMap.js').YioMap} */
+  /**
+   * @type {import('../YioMap.js').YioMap}
+   */
   #yioMap = null;
 
   /**
-   * @type {VectorLayer} layer for temporary features of the draw / modify interactions
+   * @type {VectorLayer | null} layer for temporary features of the draw / modify interactions
    */
   #editLayer = null;
+
+  /**
+   * @type {VectorTileLayer | null} VectorTileLayer of the content map which contains the editable features.
+   */
+  #editableContentLayer = null;
 
   getEditLayer() {
     return this.#editLayer;
   }
 
   /**
-   * clears the source of the edit layer, containing newly drawn and modified features
-   * @returns {boolean} true if features were cleared
+   * clears features that were modified
    */
-  clearEditSource() {
+  clearModifiedFeatures() {
     const source = this.#editLayer.getSource();
-    if (source.getFeatures().length) {
-      this.#editLayer.getSource().clear();
-      return true;
-    }
-    return false;
+    const featuresToRemove = source
+      .getFeatures()
+      .filter(feature => feature.get('id') !== undefined);
+    source.removeFeatures(featuresToRemove);
+    this.#modifiedFeatureIDs.clear();
   }
 
   /**
-   * ol layer connected associated with the given mapbox `source-layer` (editLayer)
-   * @type {VectorLayer | import("ol/layer/VectorTile.js").default}
+   * Clears features that were created
+   */
+  clearCreatedFeatures() {
+    const source = this.#editLayer.getSource();
+    const featuresToRemove = source
+      .getFeatures()
+      .filter(feature => feature.get('id') === undefined);
+    source.removeFeatures(featuresToRemove);
+  }
+
+  /**
+   * source-layer to set on created features
+   * @type {string}
    */
   #editSourceLayer;
 
   /**
-   * IDs of features that were modified
-   * @type {Array<string | number>}
+   * IDs of features that can be modified
+   * @type {Array<number> | null}
    */
-  #modifiedFeatureIDs = [];
+  #editIds = null;
+
+  /**
+   * IDs of features that were modified
+   * @type {Set<number>}
+   */
+  #modifiedFeatureIDs = new Set();
 
   /**
    * @param {Options} options
@@ -56,87 +87,6 @@ export default class UserEditInteraction extends Interaction {
   constructor(options) {
     super();
     this.#yioMap = options.yioMap;
-
-    this.#editLayer = new VectorLayer({
-      source: new VectorSource({
-        features: [],
-      }),
-    });
-
-    this.drawInteraction = new Draw({
-      source: this.#editLayer.getSource(),
-      condition: event => {
-        if (!this.modifyInteraction.getActive()) {
-          return true;
-        }
-        const existingFeature = this.#getEligibleFeatureAtPixel(event.pixel);
-        return !existingFeature;
-      },
-      type: 'Point',
-      style: () => {
-        return this.getMap().getTargetElement().style.cursor === 'pointer'
-          ? null
-          : defaultStyles;
-      },
-    });
-    this.drawInteraction.on('drawend', event => {
-      const feature = event.feature;
-      feature.set('layer', this.#yioMap.editLayer);
-      this.#editLayer.getSource().once('addfeature', () => {
-        this.#handleClick(event);
-      });
-    });
-    this.modifyInteraction = new Modify({
-      source: this.#editLayer.getSource(),
-      condition: event => {
-        const existingFeature = event.map
-          .getFeaturesAtPixel(event.pixel)
-          .find(f => {
-            return f.get('layer') === this.#yioMap.editLayer;
-          });
-        return !!existingFeature;
-      },
-      style: () => {
-        return this.getMap().getTargetElement().style.cursor === 'pointer'
-          ? null
-          : defaultStyles;
-      },
-    });
-
-    this.modifyInteraction.on('modifystart', event => {
-      const modifiedFeatureIds = event.features
-        .getArray()
-        .map(feature => feature.get('id'))
-        .filter(id => !!id);
-      if (modifiedFeatureIds.length) {
-        for (let i = 0, ii = modifiedFeatureIds.length; i < ii; i++) {
-          const modifiedFeatureId = modifiedFeatureIds[i];
-          if (!this.#modifiedFeatureIDs.includes(modifiedFeatureId)) {
-            this.#modifiedFeatureIDs.push(modifiedFeatureId);
-          }
-        }
-        this.#editSourceLayer.changed();
-      }
-    });
-    this.modifyInteraction.on('modifyend', event => {
-      this.#handleClick(event);
-    });
-    this.drawInteraction.setActive(false);
-    this.modifyInteraction.setActive(false);
-  }
-
-  setMap(map) {
-    const currentMap = this.getMap();
-    if (currentMap) {
-      currentMap.removeLayer(this.#editLayer);
-    }
-    if (!map) {
-      return;
-    }
-    this.#editLayer.setMap(map);
-    super.setMap(map);
-    this.modifyInteraction.setMap(map);
-    this.drawInteraction.setMap(map);
   }
 
   drawInteraction;
@@ -155,67 +105,170 @@ export default class UserEditInteraction extends Interaction {
    */
   #originalStyle = null;
 
-  setActive(active) {
-    if (!this.modifyInteraction || !this.drawInteraction) {
+  #hasEligibleFeature = false;
+
+  #addInteractions() {
+    this.drawInteraction = new Draw({
+      source: this.#editLayer.getSource(),
+      condition: event => {
+        if (!noModifierKeys(event)) {
+          return false;
+        }
+        return this.createEnabled && !this.#hasEligibleFeature;
+      },
+      type: 'Point',
+      style: () => {
+        return this.#hasEligibleFeature ? null : defaultStyles;
+      },
+    });
+    this.getMap().addInteraction(this.drawInteraction);
+    this.drawInteraction.on('drawend', event => {
+      const feature = event.feature;
+      feature.set('mvt:layer', this.#editSourceLayer);
+    });
+    this.modifyInteraction = new Modify({
+      source: this.#editLayer.getSource(),
+      condition: event => {
+        if (!primaryAction(event)) {
+          return false;
+        }
+        return this.modifyEnabled;
+      },
+      style: () => {
+        return this.#hasEligibleFeature ? null : defaultStyles;
+      },
+    });
+    this.getMap().addInteraction(this.modifyInteraction);
+  }
+
+  #removeInteractions() {
+    if (this.drawInteraction) {
+      this.drawInteraction.setMap(null);
+      this.drawInteraction = null;
+    }
+    if (this.modifyInteraction) {
+      this.modifyInteraction.setMap(null);
+      this.modifyInteraction = null;
+    }
+  }
+
+  async setActive(active) {
+    if (active === this.getActive()) {
       return;
     }
-    let sourceLayer;
-    try {
-      sourceLayer = getLayerForMapboxSourceLayer(
-        this.#yioMap._getContentLayer(),
-        this.#yioMap.editLayer,
-      );
-    } catch (e) {
-      console.error(e);
+    const map = this.getMap();
+    if (!map) {
       return;
     }
     if (active) {
-      this.#editSourceLayer = sourceLayer;
-      this.#originalStyle = sourceLayer?.getStyle();
-      sourceLayer.setStyle((feature, resolution) => {
-        if (this.#modifiedFeatureIDs.includes(feature.get('id'))) {
-          return;
-        }
-        return this.#originalStyle(feature, resolution);
-      });
+      const layerGroup = await this.#yioMap._getContentLayerPromise();
+      const layers = getLayers(layerGroup, 'edits');
+      if (!layers.length) {
+        console.warn(
+          'No edits source found in content layer. Please add a source with key "edits" and at least one layer that uses it.',
+        );
+        const mapboxStyle = layerGroup.get('mapbox-style');
+        mapboxStyle.sources.edits = {
+          type: 'geojson',
+          data: {
+            type: 'FeatureCollection',
+            features: [],
+          },
+        };
+        await addMapboxLayer(layerGroup, {
+          id: 'all-edits',
+          source: 'edits',
+          type: 'circle',
+          paint: {
+            'circle-radius': 5,
+            'circle-color': '#ff0000',
+            'circle-stroke-width': 1,
+          },
+        });
+      }
+      this.#editLayer = /** @type {import('ol/layer/Vector.js').default} */ (
+        getLayers(layerGroup, 'edits')[0]
+      );
+      this.#editableContentLayer = this.#yioMap
+        ._getContentLayer()
+        .getLayers()
+        .getArray()
+        .filter(l => l instanceof VectorTileLayer)
+        .pop();
       this.#setStyle();
-      this.#pointerMoveListener = e => {
-        const map = this.getMap();
-        if (!this.modifyInteraction.getActive()) {
-          map.getTargetElement().style.cursor = '';
-          return null;
-        }
-        const hasEligibleFeature = !!this.#getEligibleFeatureAtPixel(e.pixel);
-        e.target.getTargetElement().style.cursor = hasEligibleFeature
-          ? 'pointer'
-          : '';
-      };
-      this.getMap()?.on('pointermove', this.#pointerMoveListener);
+
+      if (!this.#originalStyle) {
+        this.#originalStyle = this.#editableContentLayer.getStyle();
+        this.#editableContentLayer.setStyle((feature, resolution) => {
+          if (this.#modifiedFeatureIDs.has(feature.get('id'))) {
+            return;
+          }
+          return this.#originalStyle(feature, resolution);
+        });
+      }
+      if (!this.#pointerMoveListener) {
+        this.#pointerMoveListener = e => {
+          if (!this.modifyEnabled) {
+            map.getTargetElement().style.cursor = '';
+            this.#hasEligibleFeature = false;
+            return null;
+          }
+          this.#hasEligibleFeature = !!this.#getEligibleFeatureAtPixel(e.pixel);
+          e.target.getTargetElement().style.cursor = this.#hasEligibleFeature
+            ? 'pointer'
+            : '';
+        };
+        map.on('pointermove', this.#pointerMoveListener);
+      }
+      this.#addInteractions();
     } else {
       if (this.#originalStyle) {
-        this.#editSourceLayer.setStyle(this.#originalStyle);
+        this.#editableContentLayer.setStyle(this.#originalStyle);
+        this.#originalStyle = null;
       }
       this.#editSourceLayer = null;
-      this.getMap()?.un('pointermove', this.#pointerMoveListener);
+      if (this.#pointerMoveListener) {
+        map.un('pointermove', this.#pointerMoveListener);
+        this.#pointerMoveListener = null;
+      }
+      this.#removeInteractions();
     }
-    this.modifyInteraction.setActive(active && this.#yioMap.editModify);
-    this.drawInteraction.setActive(active && this.#yioMap.editCreate);
-    this.#editLayer.getSource().clear();
     super.setActive(active);
   }
 
-  setCreateEnabled(enabled) {
-    if (!this.drawInteraction) {
-      return;
-    }
-    this.drawInteraction.setActive(this.getActive() && enabled);
+  get createEnabled() {
+    return !!this.#editSourceLayer;
   }
 
-  setModifyEnabled(enabled) {
-    if (!this.modifyInteraction) {
-      return;
+  async setCreateEnabled(value) {
+    this.#editSourceLayer = value || undefined;
+    if (!value) {
+      this.clearCreatedFeatures();
+      this.#editableContentLayer.getSource().refresh();
     }
-    this.modifyInteraction.setActive(this.getActive() && enabled);
+    await this.setActive(!!value || !!this.#editIds);
+    if (this.drawInteraction) {
+      this.drawInteraction.setMap(!!value ? this.getMap() : null);
+    }
+  }
+
+  get modifyEnabled() {
+    return !!this.#editIds;
+  }
+
+  async setModifyEnabled(ids) {
+    if (ids && ids.length === 0) {
+      ids = null;
+    }
+    if (!ids) {
+      this.clearModifiedFeatures();
+      this.#editableContentLayer.getSource().refresh();
+    }
+    this.#editIds = ids;
+    await this.setActive(!!ids || !!this.#editSourceLayer);
+    if (this.modifyInteraction) {
+      this.modifyInteraction.setMap(!!ids ? this.getMap() : null);
+    }
   }
 
   /**
@@ -223,7 +276,9 @@ export default class UserEditInteraction extends Interaction {
    */
   #setStyle() {
     this.#editLayer.setStyle((feature, resolution) => {
-      return this.#originalStyle(feature, resolution) || defaultStyles;
+      return this.#originalStyle
+        ? this.#originalStyle(feature, resolution) || defaultStyles
+        : defaultStyles;
     });
   }
 
@@ -235,20 +290,20 @@ export default class UserEditInteraction extends Interaction {
    * @returns {import('ol/Feature.js').FeatureLike | null}
    */
   #getEligibleFeatureAtPixel(pixel) {
+    if (!this.#editIds) {
+      return null;
+    }
     const map = this.getMap();
     const existingFeatures = map
-      .getFeaturesAtPixel(pixel)
-      .filter(f => {
-        return (
-          f.getGeometry().getType() === 'Point' &&
-          f.get('layer') === this.#yioMap.editLayer
-        );
+      .getFeaturesAtPixel(pixel, {
+        layerFilter: l =>
+          l === this.#editLayer || l == this.#editableContentLayer,
       })
       .filter(f => {
         return (
-          // filter by IDs that can be modified
-          this.#yioMap.editModifyIDs.length === 0 ||
-          this.#yioMap.editModifyIDs.includes(f.get('id'))
+          f.getGeometry().getType() === 'Point' &&
+          (this.#editIds.includes(f.get('id')) ||
+            this.#editLayer.getSource().hasFeature(f))
         );
       });
     return existingFeatures.length ? existingFeatures[0] : null;
@@ -261,44 +316,34 @@ export default class UserEditInteraction extends Interaction {
   handleEvent(event) {
     let propagateEvent = true;
 
-    if (event.type === 'click') {
+    if (event.type === 'pointerdown') {
       const existingFeature = this.#getEligibleFeatureAtPixel(event.pixel);
-      if (existingFeature && this.modifyInteraction.getActive()) {
+      if (
+        existingFeature &&
+        existingFeature instanceof RenderFeature &&
+        this.modifyEnabled
+      ) {
         const existingFeatureId = existingFeature.get('id');
-        if (!this.#modifiedFeatureIDs.includes(existingFeatureId)) {
-          this.#modifiedFeatureIDs.push(existingFeatureId);
+        if (!this.#modifiedFeatureIDs.has(existingFeatureId)) {
+          this.#modifiedFeatureIDs.add(existingFeatureId);
         }
-        this.#editSourceLayer.changed();
-        let newFeature;
-        if (existingFeature instanceof RenderFeature) {
-          newFeature = toFeature(existingFeature);
-        } else {
-          newFeature = existingFeature.clone();
-        }
+        this.#editableContentLayer.changed();
+        const newFeature = toFeature(existingFeature);
         this.#editLayer.getSource().addFeature(newFeature);
-        this.#handleClick(event);
-        return false;
       }
     }
 
-    if (
-      event.originalEvent instanceof PointerEvent &&
-      this.drawInteraction.getActive() &&
-      !this.drawInteraction.handleEvent(
-        /** @type {import('ol/MapBrowserEvent.js').default<PointerEvent>} */ (
-          event
-        ),
-      )
-    ) {
-      propagateEvent = false;
+    if (propagateEvent && this.modifyEnabled) {
+      propagateEvent = this.modifyInteraction.handleEvent(event);
     }
-    if (
-      propagateEvent &&
-      this.modifyInteraction.getActive() &&
-      !this.modifyInteraction.handleEvent(event)
-    ) {
-      propagateEvent = false;
+    if (propagateEvent && this.createEnabled) {
+      propagateEvent = this.drawInteraction.handleEvent(event);
     }
+
+    if (propagateEvent && event.type === 'click') {
+      this.#handleClick(event);
+    }
+
     return propagateEvent;
   }
 }
