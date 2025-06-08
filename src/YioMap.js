@@ -10,7 +10,6 @@ import UserSelectInteraction from './controls/UserSelectInteraction.js';
 import UserEditInteraction from './controls/UserEditInteraction.js';
 import LayerGroup from 'ol/layer/Group.js';
 import apply from 'ol-mapbox-style';
-import { getLayerForMapboxSourceLayer } from './utils.js';
 import UserPinInteraction from './controls/UserPinInteraction.js';
 
 export class YioMap extends LitElement {
@@ -26,6 +25,14 @@ export class YioMap extends LitElement {
         width: 100%;
         height: 100%;
       }
+      .cursor-pointer {
+        cursor: pointer;
+      }
+      .cursor-move {
+        cursor: move;
+      }
+      .cursor-pointer.cursor-move {
+        cursor: grab;
     `,
   ];
 

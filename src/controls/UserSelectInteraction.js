@@ -54,7 +54,11 @@ export default class UserSelectInteraction extends Interaction {
           contentLayer.getLayers().getArray().includes(layer),
       })
       .filter(feature => feature.get('id') !== undefined);
-    map.getTargetElement().style.cursor = features.length ? 'pointer' : '';
+    if (features.length) {
+      map.getTargetElement().classList.add('cursor-pointer');
+    } else {
+      map.getTargetElement().classList.remove('cursor-pointer');
+    }
   }
 
   /**

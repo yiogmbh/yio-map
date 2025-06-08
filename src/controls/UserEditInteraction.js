@@ -1,11 +1,9 @@
 import Interaction from 'ol/interaction/Interaction.js';
 import VectorLayer from 'ol/layer/Vector.js';
 import RenderFeature, { toFeature } from 'ol/render/Feature.js';
-import VectorSource from 'ol/source/Vector.js';
 import Draw from 'ol/interaction/Draw.js';
 import Modify from 'ol/interaction/Modify.js';
 import { defaultStyles } from '../constants.js';
-import { getLayerForMapboxSourceLayer } from '../utils.js';
 import {
   addMapboxLayer,
   getLayer,
@@ -175,16 +173,25 @@ export default class UserEditInteraction extends Interaction {
             features: [],
           },
         };
-        await addMapboxLayer(layerGroup, {
-          id: 'all-edits',
-          source: 'edits',
-          type: 'circle',
-          paint: {
-            'circle-radius': 5,
-            'circle-color': '#ff0000',
-            'circle-stroke-width': 1,
-          },
-        });
+        for (const layer of mapboxStyle.layers) {
+          if (
+            mapboxStyle.sources[layer.source]?.type !== 'vector' &&
+            (layer.type !== 'circle' || layer.type !== 'symbol')
+          ) {
+            continue;
+          }
+          await addMapboxLayer(layerGroup, {
+            id: 'edits-' + layer.id,
+            source: 'edits',
+            'source-layer': layer['source-layer'],
+            type: 'circle',
+            paint: {
+              'circle-radius': 5,
+              'circle-color': '#ff0000',
+              'circle-stroke-width': 1,
+            },
+          });
+        }
       }
       this.#editLayer = /** @type {import('ol/layer/Vector.js').default} */ (
         getLayers(layerGroup, 'edits')[0]
@@ -195,7 +202,6 @@ export default class UserEditInteraction extends Interaction {
         .getArray()
         .filter(l => l instanceof VectorTileLayer)
         .pop();
-      this.#setStyle();
 
       if (!this.#originalStyle) {
         this.#originalStyle = this.#editableContentLayer.getStyle();
@@ -214,9 +220,11 @@ export default class UserEditInteraction extends Interaction {
             return null;
           }
           this.#hasEligibleFeature = !!this.#getEligibleFeatureAtPixel(e.pixel);
-          e.target.getTargetElement().style.cursor = this.#hasEligibleFeature
-            ? 'pointer'
-            : '';
+          if (this.#hasEligibleFeature) {
+            map.getTargetElement().classList.add('cursor-move');
+          } else {
+            map.getTargetElement().classList.remove('cursor-move');
+          }
         };
         map.on('pointermove', this.#pointerMoveListener);
       }
@@ -250,10 +258,15 @@ export default class UserEditInteraction extends Interaction {
     if (this.drawInteraction) {
       this.drawInteraction.setMap(!!value ? this.getMap() : null);
     }
+    if (this.modifyInteraction) {
+      this.modifyInteraction.setMap(
+        !!value || !!this.#editIds ? this.getMap() : null,
+      );
+    }
   }
 
   get modifyEnabled() {
-    return !!this.#editIds;
+    return !!this.#editIds || !!this.#editSourceLayer;
   }
 
   async setModifyEnabled(ids) {
@@ -267,19 +280,10 @@ export default class UserEditInteraction extends Interaction {
     this.#editIds = ids;
     await this.setActive(!!ids || !!this.#editSourceLayer);
     if (this.modifyInteraction) {
-      this.modifyInteraction.setMap(!!ids ? this.getMap() : null);
+      this.modifyInteraction.setMap(
+        !!ids || !!this.#editSourceLayer ? this.getMap() : null,
+      );
     }
-  }
-
-  /**
-   * sets the style of the editing layer to match the existing layer of the content map.
-   */
-  #setStyle() {
-    this.#editLayer.setStyle((feature, resolution) => {
-      return this.#originalStyle
-        ? this.#originalStyle(feature, resolution) || defaultStyles
-        : defaultStyles;
-    });
   }
 
   #pointerMoveListener = null;
@@ -290,9 +294,6 @@ export default class UserEditInteraction extends Interaction {
    * @returns {import('ol/Feature.js').FeatureLike | null}
    */
   #getEligibleFeatureAtPixel(pixel) {
-    if (!this.#editIds) {
-      return null;
-    }
     const map = this.getMap();
     const existingFeatures = map
       .getFeaturesAtPixel(pixel, {
@@ -302,8 +303,8 @@ export default class UserEditInteraction extends Interaction {
       .filter(f => {
         return (
           f.getGeometry().getType() === 'Point' &&
-          (this.#editIds.includes(f.get('id')) ||
-            this.#editLayer.getSource().hasFeature(f))
+          (this.#editLayer.getSource().hasFeature(f) ||
+            this.#editIds?.includes(f.get('id')))
         );
       });
     return existingFeatures.length ? existingFeatures[0] : null;
