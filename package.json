@@ -3,7 +3,7 @@
   "description": "Webcomponent yio-map following open-wc recommendations",
   "license": "MIT",
   "author": "yio-map",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "type": "module",
   "main": "dist/yio-map.umd.js",
   "module": "dist/yio-map.js",
