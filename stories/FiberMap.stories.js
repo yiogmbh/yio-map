@@ -242,6 +242,7 @@ export const OverlayGeoJson = {
           id: 'line-layer',
           type: 'line',
           source: 'geojson',
+
           paint: {
             'line-color': '#0000ff',
             'line-width': 2,
@@ -251,6 +252,7 @@ export const OverlayGeoJson = {
           id: 'point-layer',
           type: 'circle',
           source: 'geojson',
+
           paint: {
             'circle-radius': 6,
             'circle-color': '#00ff00',
@@ -281,7 +283,7 @@ export const OverlayGeoJson = {
           type: 'Feature',
           geometry: {
             type: 'Point',
-            coordinates: [-74.003, 40.7148],
+            coordinates: [-74.023, 40.7148],
           },
           properties: { color: '#00ff00' },
         },

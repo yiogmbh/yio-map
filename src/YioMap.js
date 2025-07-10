@@ -40,7 +40,7 @@ export class YioMap extends LitElement {
   static properties = {
     center: { type: Array, reflect: true },
     zoom: { type: Number, reflect: true },
-    contentMap: { type: Object },
+    contentMap: { type: String },
     editCreate: { type: String },
     editModify: { type: Array },
     enablePinning: { type: Boolean },
@@ -198,6 +198,7 @@ export class YioMap extends LitElement {
 
   set overlayGeoJson(value) {
     this.#overlayGeoJson = value;
+    this.#applyOverlayGeoJson();
   }
 
   get editFeatures() {
@@ -221,24 +222,19 @@ export class YioMap extends LitElement {
       this.#contentLayer.getLayers().clear();
       this.#contentLayerPromise = null;
       if (this.contentMap) {
-        this.#contentLayerPromise = new Promise(async () => {
-          const contentMapObj = await this.#getAsObjectOrFetch(this.contentMap);
-          contentMapObj['sources'] ??= {};
-          // Ensure the 'geojson' source is always present
+        this.#contentLayerPromise = this.#getAsObjectOrFetch(this.contentMap)
+          .then(contentMapObj => {
+            contentMapObj['sources'] ??= {};
+            contentMapObj['sources']['geojson'] = {
+              type: 'geojson',
+              data: emptyGeojson,
+            };
 
-          const geoJsonObj = await this.#getAsObjectOrFetch(
-            this.overlayGeoJson,
-          );
-
-          contentMapObj['sources']['geojson'] = {
-            type: 'geojson',
-            data: geoJsonObj ?? emptyGeojson,
-          };
-
-          await apply(this.#contentLayer, this.contentMap);
-        }).catch(error => {
-          console.error(error);
-        });
+            return apply(this.#contentLayer, contentMapObj);
+          })
+          .catch(error => {
+            console.error(error);
+          });
       }
     }
   }
@@ -263,7 +259,6 @@ export class YioMap extends LitElement {
 
   async #applyOverlayGeoJson() {
     const layer = await this.#contentLayerPromise;
-
     if (!this.#overlayGeoJson) {
       updateMapboxSource(layer, 'geojson', {
         type: 'geojson',
@@ -273,7 +268,7 @@ export class YioMap extends LitElement {
     }
 
     try {
-      const geoJsonData = this.#getAsObjectOrFetch(this.#overlayGeoJson);
+      const geoJsonData = await this.#getAsObjectOrFetch(this.#overlayGeoJson);
       updateMapboxSource(layer, 'geojson', {
         type: 'geojson',
         data: geoJsonData,
