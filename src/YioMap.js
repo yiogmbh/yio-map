@@ -9,8 +9,9 @@ import LayerControl from './controls/LayerControl.js';
 import UserSelectInteraction from './controls/UserSelectInteraction.js';
 import UserEditInteraction from './controls/UserEditInteraction.js';
 import LayerGroup from 'ol/layer/Group.js';
-import apply from 'ol-mapbox-style';
+import apply, { updateMapboxSource } from 'ol-mapbox-style';
 import UserPinInteraction from './controls/UserPinInteraction.js';
+import { emptyGeojson } from './constants.js';
 
 export class YioMap extends LitElement {
   static styles = [
@@ -39,11 +40,12 @@ export class YioMap extends LitElement {
   static properties = {
     center: { type: Array, reflect: true },
     zoom: { type: Number, reflect: true },
-    contentMap: { type: String },
+    contentMap: { type: Object },
     editCreate: { type: String },
     editModify: { type: Array },
     enablePinning: { type: Boolean },
     enableSelect: { type: Boolean },
+    overlayGeoJson: { type: Object },
     editFeatures: { attribute: false },
     lastClickCoordinate: { type: Array, attribute: false },
     userSelect: { attribute: false },
@@ -99,6 +101,11 @@ export class YioMap extends LitElement {
    * @type {boolean} whether pinning is enabled
    */
   #enablePinning = false;
+
+  /**
+   * @type {Object|string} GeoJSON data or URL to overlay on the map
+   */
+  #overlayGeoJson = null;
 
   constructor() {
     super();
@@ -185,6 +192,14 @@ export class YioMap extends LitElement {
     this.#userPinInteraction.setActive(!!this.#enablePinning);
   }
 
+  get overlayGeoJson() {
+    return this.#overlayGeoJson;
+  }
+
+  set overlayGeoJson(value) {
+    this.#overlayGeoJson = value;
+  }
+
   get editFeatures() {
     const features = this.#userEditInteraction
       .getEditLayer()
@@ -206,13 +221,65 @@ export class YioMap extends LitElement {
       this.#contentLayer.getLayers().clear();
       this.#contentLayerPromise = null;
       if (this.contentMap) {
-        this.#contentLayerPromise = apply(
-          this.#contentLayer,
-          this.contentMap,
-        ).catch(error => {
+        this.#contentLayerPromise = new Promise(async () => {
+          const contentMapObj = await this.#getAsObjectOrFetch(this.contentMap);
+          contentMapObj['sources'] ??= {};
+          // Ensure the 'geojson' source is always present
+
+          const geoJsonObj = await this.#getAsObjectOrFetch(
+            this.overlayGeoJson,
+          );
+
+          contentMapObj['sources']['geojson'] = {
+            type: 'geojson',
+            data: geoJsonObj ?? emptyGeojson,
+          };
+
+          await apply(this.#contentLayer, this.contentMap);
+        }).catch(error => {
           console.error(error);
         });
       }
+    }
+  }
+
+  /**
+   * Fetches jso from url
+   * If the input is an object, it is returned as is.
+   */
+  async #getAsObjectOrFetch(url) {
+    if (typeof url === 'object') {
+      return url;
+    }
+    if (typeof url === 'string') {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch ${url}: ${response.statusText}`);
+      }
+      return await response.json();
+    }
+    return {};
+  }
+
+  async #applyOverlayGeoJson() {
+    const layer = await this.#contentLayerPromise;
+
+    if (!this.#overlayGeoJson) {
+      updateMapboxSource(layer, 'geojson', {
+        type: 'geojson',
+        data: emptyGeojson,
+      });
+      return;
+    }
+
+    try {
+      const geoJsonData = this.#getAsObjectOrFetch(this.#overlayGeoJson);
+      updateMapboxSource(layer, 'geojson', {
+        type: 'geojson',
+        data: geoJsonData,
+      });
+    } catch (error) {
+      console.error('Failed to apply overlay GeoJSON:', error);
     }
   }
 
