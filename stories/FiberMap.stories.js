@@ -236,7 +236,15 @@ export const OverlayGeoJson = {
     zoom: 15,
     contentMap: {
       version: 8,
-      sources: {},
+      sources: {
+        geojson: {
+          type: 'geojson',
+          data: {
+            type: 'FeatureCollection',
+            features: [],
+          },
+        },
+      },
       layers: [
         {
           id: 'line-layer',

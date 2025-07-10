@@ -222,19 +222,12 @@ export class YioMap extends LitElement {
       this.#contentLayer.getLayers().clear();
       this.#contentLayerPromise = null;
       if (this.contentMap) {
-        this.#contentLayerPromise = this.#getAsObjectOrFetch(this.contentMap)
-          .then(contentMapObj => {
-            contentMapObj['sources'] ??= {};
-            contentMapObj['sources']['geojson'] = {
-              type: 'geojson',
-              data: emptyGeojson,
-            };
-
-            return apply(this.#contentLayer, contentMapObj);
-          })
-          .catch(error => {
-            console.error(error);
-          });
+        this.#contentLayerPromise = apply(
+          this.#contentLayer,
+          this.contentMap,
+        ).catch(error => {
+          console.error(error);
+        });
       }
     }
   }
