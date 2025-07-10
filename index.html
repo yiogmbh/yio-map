@@ -63,7 +63,17 @@
         id="editModify"
         value="[1402981716563881000, 1414138424277799000, 1429056567079318800]"
         style="width: 600px"
-      />
+      /><br />
+      <label>
+        <input type="checkbox" name="attribute" value="overlayGeoJson" />
+        overlayGeoJson
+      </label>
+      <input
+        id="overlayGeoJson"
+        value='{"type":"FeatureCollection","features":[{"type":"Feature","geometry":{"type":"Point","coordinates":[15.2575,48.5554]},"properties":{"name":"Sample Point","styleType":"alarm"}}]}'
+        style="width: 600px"
+      /><br />
+      <button type="button" id="toggleOverlay">Toggle Sample Overlay</button>
     </form>
 
     <script>
@@ -98,10 +108,71 @@
           info.style.left = `${e.clientX - info.clientWidth / 2}px`;
           info.style.top = `${e.clientY + 10}px`;
         }
-        console.log('lastClickCoordinate', map.lastClickCoordinate);
-        console.log('editFeatures', e.target.editFeatures);
-        console.log('userSelect', e.target.userSelect);
-        console.log('[event]', e);
+      });
+
+      // Overlay toggle functionality
+      const toggleOverlayBtn = document.getElementById('toggleOverlay');
+      let overlayVisible = false;
+
+      const sampleOverlay = {
+        type: 'FeatureCollection',
+        features: [
+          {
+            type: 'Feature',
+            geometry: {
+              type: 'Point',
+              coordinates: [15.2575, 48.5554],
+            },
+            properties: {
+              name: 'Alarm Point',
+              styleType: 'alarm',
+              description: 'Critical network issue',
+            },
+          },
+          {
+            type: 'Feature',
+            geometry: {
+              type: 'Point',
+              coordinates: [15.2675, 48.5654],
+            },
+            properties: {
+              name: 'Warning Point',
+              styleType: 'warning',
+              description: 'Performance degradation',
+            },
+          },
+          {
+            type: 'Feature',
+            geometry: {
+              type: 'Polygon',
+              coordinates: [
+                [
+                  [15.25, 48.55],
+                  [15.27, 48.55],
+                  [15.27, 48.57],
+                  [15.25, 48.57],
+                  [15.25, 48.55],
+                ],
+              ],
+            },
+            properties: {
+              name: 'Affected Area',
+              styleType: 'alarm',
+              description: 'Service disruption zone',
+            },
+          },
+        ],
+      };
+
+      toggleOverlayBtn.addEventListener('click', () => {
+        if (overlayVisible) {
+          map.overlayGeoJson = '';
+          toggleOverlayBtn.textContent = 'Show Sample Overlay';
+        } else {
+          map.overlayGeoJson = JSON.stringify(sampleOverlay);
+          toggleOverlayBtn.textContent = 'Hide Sample Overlay';
+        }
+        overlayVisible = !overlayVisible;
       });
     </script>
   </body>

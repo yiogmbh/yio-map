@@ -227,3 +227,63 @@ ModifyFeatures.play = async ({ canvasElement }) => {
     el.editCreate = false;
   }
 };
+
+/** @type {import('@storybook/web-components').StoryObj} */
+export const OverlayGeoJson = {
+  args: {
+    center: [16.3738, 48.2082], // Vienna coordinates
+    zoom: 12,
+    overlayGeoJson: JSON.stringify({
+      type: 'FeatureCollection',
+      features: [
+        {
+          type: 'Feature',
+          geometry: {
+            type: 'Point',
+            coordinates: [16.3738, 48.2082], // Vienna center
+          },
+        },
+        {
+          type: 'Feature',
+          geometry: {
+            type: 'Point',
+            coordinates: [16.3998, 48.2198],
+          },
+        },
+        {
+          type: 'Feature',
+          geometry: {
+            type: 'Point',
+            coordinates: [16.3478, 48.1962],
+          },
+        },
+        {
+          type: 'Feature',
+          geometry: {
+            type: 'Polygon',
+            coordinates: [
+              [
+                [16.35, 48.19],
+                [16.4, 48.19],
+                [16.4, 48.22],
+                [16.35, 48.22],
+                [16.35, 48.19],
+              ],
+            ],
+          },
+          properties: {},
+        },
+      ],
+    }),
+  },
+};
+
+/** @type {import('@storybook/web-components').StoryObj} */
+export const OverlayGeoJsonFromUrl = {
+  args: {
+    center: [16.3738, 48.2082],
+    zoom: 12,
+    overlayGeoJson:
+      'https://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_10m_rivers_europe.geojson',
+  },
+};

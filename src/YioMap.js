@@ -4,6 +4,8 @@ import layerControlStyle from './controls/LayerControl.css?inline';
 
 import Map from 'ol/Map.js';
 import GeoJSON from 'ol/format/GeoJSON.js';
+import VectorLayer from 'ol/layer/Vector.js';
+import VectorSource from 'ol/source/Vector.js';
 import { fromLonLat, toLonLat } from 'ol/proj.js';
 import LayerControl from './controls/LayerControl.js';
 import UserSelectInteraction from './controls/UserSelectInteraction.js';
@@ -11,6 +13,7 @@ import UserEditInteraction from './controls/UserEditInteraction.js';
 import LayerGroup from 'ol/layer/Group.js';
 import apply from 'ol-mapbox-style';
 import UserPinInteraction from './controls/UserPinInteraction.js';
+import { overlayStyleFunction, overlayStyles } from './constants.js';
 
 export class YioMap extends LitElement {
   static styles = [
@@ -40,6 +43,7 @@ export class YioMap extends LitElement {
     center: { type: Array, reflect: true },
     zoom: { type: Number, reflect: true },
     contentMap: { type: String },
+    overlayGeoJson: { type: String },
     editCreate: { type: String },
     editModify: { type: Array },
     enablePinning: { type: Boolean },
@@ -62,6 +66,16 @@ export class YioMap extends LitElement {
 
   /** @type {LayerGroup} */
   #contentLayer = new LayerGroup();
+
+  /**
+   * @type {VectorLayer} Layer for overlay GeoJSON data
+   */
+  #overlayLayer = null;
+
+  /**
+   * @type {string} URL or GeoJSON string for overlay data
+   */
+  #overlayGeoJson = '';
 
   /**
    * @type {UserEditInteraction}
@@ -149,6 +163,15 @@ export class YioMap extends LitElement {
     this.#applyContentMap();
   }
 
+  get overlayGeoJson() {
+    return this.#overlayGeoJson;
+  }
+
+  set overlayGeoJson(value) {
+    this.#overlayGeoJson = value;
+    this.#applyOverlayGeoJson();
+  }
+
   get editCreate() {
     return this.#editCreate;
   }
@@ -217,6 +240,60 @@ export class YioMap extends LitElement {
   }
 
   /**
+   * Applies overlay GeoJSON data to the overlay layer
+   */
+  async #applyOverlayGeoJson() {
+    if (!this.#overlayLayer) {
+      this.#overlayLayer = new VectorLayer({
+        source: new VectorSource(),
+        style: overlayStyleFunction,
+        zIndex: 1000, // Ensure overlay appears on top
+      });
+
+      // Add layer to map if map exists
+      if (this.#map) {
+        this.#map.addLayer(this.#overlayLayer);
+      }
+    }
+
+    const source = this.#overlayLayer.getSource();
+    source.clear();
+
+    if (!this.#overlayGeoJson) {
+      return;
+    }
+
+    try {
+      let geoJsonData;
+
+      // Check if it's a URL or JSON string
+      if (
+        this.#overlayGeoJson.startsWith('http') ||
+        this.#overlayGeoJson.startsWith('/')
+      ) {
+        const response = await fetch(this.#overlayGeoJson);
+        if (!response.ok) {
+          throw new Error(
+            `Failed to fetch overlay data: ${response.statusText}`,
+          );
+        }
+        geoJsonData = await response.json();
+      } else {
+        geoJsonData = JSON.parse(this.#overlayGeoJson);
+      }
+
+      const format = new GeoJSON();
+      const features = format.readFeatures(geoJsonData, {
+        featureProjection: 'EPSG:3857',
+      });
+
+      source.addFeatures(features);
+    } catch (error) {
+      console.error('Error loading overlay GeoJSON:', error);
+    }
+  }
+
+  /**
    * creates the map instance and essential layers and interactions
    */
   #createMap() {
@@ -224,6 +301,11 @@ export class YioMap extends LitElement {
     this.#map.addControl(new LayerControl({ map: this.#map }));
 
     this.#map.addLayer(this.#contentLayer);
+
+    // Add overlay layer if it exists
+    if (this.#overlayLayer) {
+      this.#map.addLayer(this.#overlayLayer);
+    }
 
     this.#map.addInteraction(this.#userSelectInteraction);
     this.#userSelectInteraction.setActive(this.#enableUserSelect);
@@ -254,6 +336,11 @@ export class YioMap extends LitElement {
     );
     this.shadowRoot.addEventListener('click', event => event.stopPropagation());
     this.#map.setTarget(target);
+
+    // Apply overlay GeoJSON if provided
+    if (this.#overlayGeoJson) {
+      this.#applyOverlayGeoJson();
+    }
   }
 
   updated(changedProperties) {
