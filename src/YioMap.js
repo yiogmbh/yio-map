@@ -232,7 +232,9 @@ export class YioMap extends LitElement {
           console.error(error);
         });
         await this.#contentLayerPromise;
-        this.#applyGeojsonOverlay();
+        if (this.geojson) {
+          this.#applyGeojsonOverlay();
+        }
       }
     }
   }
