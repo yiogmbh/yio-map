@@ -53,9 +53,9 @@ describe('YioMap', () => {
 
     const onchange = vi.fn(() => true);
     el.addEventListener('change', onchange);
-
+    await new Promise(resolve => setTimeout(resolve, 500));
     await userEvent.dblClick(el);
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise(resolve => setTimeout(resolve, 500));
     expect(onchange).toHaveBeenCalled();
   });
 

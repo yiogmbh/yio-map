@@ -268,7 +268,7 @@ export const OverlayGeoJson = {
         },
       ],
     },
-    overlayGeoJson: {
+    geojson: {
       type: 'FeatureCollection',
       features: [
         {
@@ -332,7 +332,7 @@ export const OverlayGeoJsonFromUrl = {
         },
       ],
     },
-    overlayGeoJson:
+    geojson:
       'https://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_10m_rivers_europe.geojson',
   },
 };

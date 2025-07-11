@@ -34,6 +34,7 @@ export class YioMap extends LitElement {
       }
       .cursor-pointer.cursor-move {
         cursor: grab;
+      }
     `,
   ];
 
@@ -45,7 +46,7 @@ export class YioMap extends LitElement {
     editModify: { type: Array },
     enablePinning: { type: Boolean },
     enableSelect: { type: Boolean },
-    overlayGeoJson: { type: Object },
+    geojson: { type: Object },
     editFeatures: { attribute: false },
     lastClickCoordinate: { type: Array, attribute: false },
     userSelect: { attribute: false },
@@ -105,7 +106,7 @@ export class YioMap extends LitElement {
   /**
    * @type {Object|string} GeoJSON data or URL to overlay on the map
    */
-  #overlayGeoJson = null;
+  #geojson = null;
 
   constructor() {
     super();
@@ -192,13 +193,15 @@ export class YioMap extends LitElement {
     this.#userPinInteraction.setActive(!!this.#enablePinning);
   }
 
-  get overlayGeoJson() {
-    return this.#overlayGeoJson;
+  get geojson() {
+    return this.#geojson;
   }
 
-  set overlayGeoJson(value) {
-    this.#overlayGeoJson = value;
-    this.#applyOverlayGeoJson();
+  set geojson(value) {
+    this.#geojson = value;
+    if (this.#contentLayerPromise) {
+      this.#contentLayerPromise.then(() => this.#applyGeojsonOverlay());
+    }
   }
 
   get editFeatures() {
@@ -217,7 +220,7 @@ export class YioMap extends LitElement {
     });
   }
 
-  #applyContentMap() {
+  async #applyContentMap() {
     if (this.#contentLayer) {
       this.#contentLayer.getLayers().clear();
       this.#contentLayerPromise = null;
@@ -228,6 +231,8 @@ export class YioMap extends LitElement {
         ).catch(error => {
           console.error(error);
         });
+        await this.#contentLayerPromise;
+        this.#applyGeojsonOverlay();
       }
     }
   }
@@ -250,9 +255,9 @@ export class YioMap extends LitElement {
     return {};
   }
 
-  async #applyOverlayGeoJson() {
-    const layer = await this.#contentLayerPromise;
-    if (!this.#overlayGeoJson) {
+  async #applyGeojsonOverlay() {
+    const layer = this.#contentLayer;
+    if (!this.#geojson) {
       updateMapboxSource(layer, 'geojson', {
         type: 'geojson',
         data: emptyGeojson,
@@ -261,7 +266,7 @@ export class YioMap extends LitElement {
     }
 
     try {
-      const geoJsonData = await this.#getAsObjectOrFetch(this.#overlayGeoJson);
+      const geoJsonData = await this.#getAsObjectOrFetch(this.#geojson);
       updateMapboxSource(layer, 'geojson', {
         type: 'geojson',
         data: geoJsonData,
