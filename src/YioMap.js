@@ -12,6 +12,8 @@ import LayerGroup from 'ol/layer/Group.js';
 import apply, { updateMapboxSource } from 'ol-mapbox-style';
 import UserPinInteraction from './controls/UserPinInteraction.js';
 import { emptyGeojson } from './constants.js';
+import { defaults as defaultControls } from 'ol/control/defaults.js';
+import { YioAttribution } from './controls/YioAttribution.js';
 
 export class YioMap extends LitElement {
   static styles = [
@@ -282,7 +284,10 @@ export class YioMap extends LitElement {
    * creates the map instance and essential layers and interactions
    */
   #createMap() {
-    this.#map = new Map();
+    this.#map = new Map({
+      controls: defaultControls({ attribution: false }),
+    });
+    this.#map.addControl(YioAttribution);
     this.#map.addControl(new LayerControl({ map: this.#map }));
 
     this.#map.addLayer(this.#contentLayer);

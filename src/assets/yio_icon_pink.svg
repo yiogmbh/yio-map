@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="100%" height="100%" viewBox="0 0 256 256" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+    <g>
+        <g id="favicon">
+            <rect x="0" y="0" width="256" height="256" style="fill:none;"/>
+            <g>
+                <path d="M54.77,244.669C59.16,246.864 71.078,250.001 83.623,250.001C125.022,250.001 142.585,223.029 152.621,191.98L212.21,6L163.284,6L146.662,66.216C140.076,90.051 135.999,112.005 133.49,128L132.235,128C130.04,112.946 123.14,86.288 116.554,66.216L96.796,6L43.793,6L110.282,182.571C108.713,200.448 98.677,210.17 81.742,210.17C73.901,210.17 67.315,208.288 62.61,205.779L54.77,244.669Z" style="fill:rgb(223,72,110);fill-rule:nonzero;"/>
+            </g>
+        </g>
+    </g>
+</svg>
