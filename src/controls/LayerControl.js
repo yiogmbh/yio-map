@@ -66,8 +66,7 @@ export default class LayerControl extends Control {
         source: new ImageTile({
           maxZoom: 19,
           url: 'https://mapsneu.wien.gv.at/basemap/bmaporthofoto30cm/normal/google3857/{z}/{y}/{x}.jpg',
-          attributions:
-            'Grundkarte: <a href="https://basemap.at">basemap.at</a>',
+          attributions: '<a href="https://basemap.at">© basemap.at</a>',
         }),
       }),
       visible: false,
