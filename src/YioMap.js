@@ -162,6 +162,7 @@ export class YioMap extends LitElement {
 
   set contentMap(value) {
     this.#contentMap = value;
+    this.#applyContentMap();
   }
 
   get editCreate() {
@@ -224,20 +225,17 @@ export class YioMap extends LitElement {
     });
   }
 
-  async #applyContentMap() {
-    if (this.#contentLayer) {
-      this.#contentLayer.getLayers().clear();
-      this.#contentLayerPromise = null;
-      if (this.contentMap) {
-        this.#contentLayerPromise = apply(
-          this.#contentLayer,
-          this.contentMap,
-        ).catch(error => {
-          console.error('Error applying content to yiomap:', error);
-        });
-        await this.#contentLayerPromise;
-        await this.#updateGeojsonSources();
-      }
+  #applyContentMap() {
+    this.#contentLayer.getLayers().clear();
+    this.#contentLayerPromise = null;
+    if (this.contentMap) {
+      this.#contentLayerPromise = apply(
+        this.#contentLayer,
+        this.contentMap,
+      ).catch(error => {
+        console.error('Error applying content to yiomap:', error);
+      });
+      this.#contentLayerPromise.then(() => this.#updateGeojsonSources());
     }
   }
 
@@ -316,9 +314,7 @@ export class YioMap extends LitElement {
   updated(changedProperties) {
     super.updated(changedProperties);
 
-    if (changedProperties.has("contentMap")) {
-      this.#applyContentMap();
-    } else if (changedProperties.has("geojsonSources") && this.#contentLayerPromise) {
+    if (changedProperties.has("geojsonSources") && !changedProperties.has("contentMap") && this.#contentLayerPromise) {
       this.#updateGeojsonSources();
     }
 
