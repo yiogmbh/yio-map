@@ -9,7 +9,7 @@ import LayerControl from './controls/LayerControl.js';
 import UserSelectInteraction from './controls/UserSelectInteraction.js';
 import UserEditInteraction from './controls/UserEditInteraction.js';
 import LayerGroup from 'ol/layer/Group.js';
-import apply, { getSource, updateMapboxSource } from 'ol-mapbox-style';
+import apply, { getSource, updateMapboxLayer, updateMapboxSource } from 'ol-mapbox-style';
 import UserPinInteraction from './controls/UserPinInteraction.js';
 import { defaults as defaultControls } from 'ol/control/defaults.js';
 import { YioAttribution } from './controls/YioAttribution.js';
@@ -55,6 +55,7 @@ export class YioMap extends LitElement {
     editFeatures: { attribute: false },
     lastClickCoordinate: { type: Array, attribute: false },
     userSelect: { attribute: false },
+    sourceLayerVisibility: { type: Object },
   };
 
   /** @type {boolean} */
@@ -115,6 +116,8 @@ export class YioMap extends LitElement {
    * @type {Object|string} GeoJSON data or URL to overlay on the map
    */
   #geojsonSources = null;
+
+  #sourceLayerVisibility = null;
 
   constructor() {
     super();
@@ -209,6 +212,14 @@ export class YioMap extends LitElement {
     this.#geojsonSources = value;
   }
 
+  get sourceLayerVisibility() {
+    return this.#sourceLayerVisibility;
+  }
+
+  set sourceLayerVisibility(value) {
+    this.#sourceLayerVisibility = value;
+  }
+
   get editFeatures() {
     const features = this.#userEditInteraction
       .getEditLayer()
@@ -237,6 +248,7 @@ export class YioMap extends LitElement {
         console.error('Error applying content to yiomap:', error);
       });
       await this.#contentLayerPromise
+      await this.#updateSourceLayerVisibility();
       await this.#updateGeojsonSources();
     }
   }
@@ -266,7 +278,36 @@ export class YioMap extends LitElement {
         }),
       );
     } catch (error) {
-      console.error('Error updating geojson sources:', error);
+      console.error('Error updating GeoJSON sources:', error);
+    }
+  }
+
+  async #updateSourceLayerVisibility() {
+    if (!this.#sourceLayerVisibility) {
+      return;
+    }
+
+    const layer = await this.#contentLayerPromise;
+    if (!layer) {
+      return;
+    }
+
+    const style = layer.get("mapbox-style");
+    const layerIds = Object.keys(style.layers);
+    try {
+      await Promise.all(
+        layerIds.map(layerId => {
+          const mapboxLayer = style.layers[layerId];
+          const sourceLayer = mapboxLayer["source-layer"];
+          if (!sourceLayer || !(sourceLayer in this.#sourceLayerVisibility)) {
+            return;
+          }
+          const visibility = this.#sourceLayerVisibility[sourceLayer] ? 'visible' : 'none';
+          updateMapboxLayer(layer, {...mapboxLayer, layout: {...mapboxLayer.layout, visibility} })
+        }),
+      );
+    } catch (error) {
+      console.error('Error updating source layer visibility:', error);
     }
   }
 
@@ -315,6 +356,10 @@ export class YioMap extends LitElement {
 
   updated(changedProperties) {
     super.updated(changedProperties);
+
+    if (changedProperties.has("sourceLayerVisibility") && !changedProperties.has("contentMap") && this.#contentLayerPromise) {
+      this.#updateSourceLayerVisibility();
+    }
 
     if (changedProperties.has("geojsonSources") && !changedProperties.has("contentMap") && this.#contentLayerPromise) {
       this.#updateGeojsonSources();
