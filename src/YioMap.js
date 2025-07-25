@@ -1,4 +1,4 @@
-import { html, css, LitElement, unsafeCSS } from 'lit';
+import { css, html, LitElement, unsafeCSS } from 'lit';
 import style from 'ol/ol.css?inline';
 import layerControlStyle from './controls/LayerControl.css?inline';
 
@@ -9,9 +9,8 @@ import LayerControl from './controls/LayerControl.js';
 import UserSelectInteraction from './controls/UserSelectInteraction.js';
 import UserEditInteraction from './controls/UserEditInteraction.js';
 import LayerGroup from 'ol/layer/Group.js';
-import apply, { updateMapboxSource } from 'ol-mapbox-style';
+import apply, { getSource, updateMapboxSource } from 'ol-mapbox-style';
 import UserPinInteraction from './controls/UserPinInteraction.js';
-import { emptyGeojson } from './constants.js';
 import { defaults as defaultControls } from 'ol/control/defaults.js';
 import { YioAttribution } from './controls/YioAttribution.js';
 
@@ -24,16 +23,20 @@ export class YioMap extends LitElement {
         display: block;
         height: 200px;
       }
+
       .map {
         width: 100%;
         height: 100%;
       }
+
       .cursor-pointer {
         cursor: pointer;
       }
+
       .cursor-move {
         cursor: move;
       }
+
       .cursor-pointer.cursor-move {
         cursor: grab;
       }
@@ -48,7 +51,7 @@ export class YioMap extends LitElement {
     editModify: { type: Array },
     enablePinning: { type: Boolean },
     enableSelect: { type: Boolean },
-    geojson: { type: Object },
+    geojsonSources: { type: Object },
     editFeatures: { attribute: false },
     lastClickCoordinate: { type: Array, attribute: false },
     userSelect: { attribute: false },
@@ -83,6 +86,9 @@ export class YioMap extends LitElement {
    */
   #userPinInteraction = null;
 
+  /**
+   * @type {Promise}
+   */
   #contentLayerPromise = null;
 
   /**
@@ -108,7 +114,7 @@ export class YioMap extends LitElement {
   /**
    * @type {Object|string} GeoJSON data or URL to overlay on the map
    */
-  #geojson = null;
+  #geojsonSources = null;
 
   constructor() {
     super();
@@ -156,7 +162,6 @@ export class YioMap extends LitElement {
 
   set contentMap(value) {
     this.#contentMap = value;
-    this.#applyContentMap();
   }
 
   get editCreate() {
@@ -195,15 +200,12 @@ export class YioMap extends LitElement {
     this.#userPinInteraction.setActive(!!this.#enablePinning);
   }
 
-  get geojson() {
-    return this.#geojson;
+  get geojsonSources() {
+    return this.#geojsonSources;
   }
 
-  set geojson(value) {
-    this.#geojson = value;
-    if (this.#contentLayerPromise) {
-      this.#contentLayerPromise.then(() => this.#applyGeojsonOverlay());
-    }
+  set geojsonSources(value) {
+    this.#geojsonSources = value;
   }
 
   get editFeatures() {
@@ -231,52 +233,40 @@ export class YioMap extends LitElement {
           this.#contentLayer,
           this.contentMap,
         ).catch(error => {
-          console.error(error);
+          console.error('Error applying content to yiomap:', error);
         });
         await this.#contentLayerPromise;
-        if (this.geojson) {
-          this.#applyGeojsonOverlay();
-        }
+        await this.#updateGeojsonSources();
       }
     }
   }
 
-  /**
-   * Fetches jso from url
-   * If the input is an object, it is returned as is.
-   */
-  async #getAsObjectOrFetch(url) {
-    if (typeof url === 'object') {
-      return url;
-    }
-    if (typeof url === 'string') {
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch ${url}: ${response.statusText}`);
-      }
-      return await response.json();
-    }
-    return {};
-  }
-
-  async #applyGeojsonOverlay() {
-    const layer = this.#contentLayer;
-    if (!this.#geojson) {
-      updateMapboxSource(layer, 'geojson', {
-        type: 'geojson',
-        data: emptyGeojson,
-      });
+  async #updateGeojsonSources() {
+    if (!this.#geojsonSources) {
       return;
     }
+    const layer = await this.#contentLayerPromise;
+    if (!layer) {
+      return;
+    }
+    const sources = Object.keys(this.#geojsonSources);
 
     try {
-      const geoJsonData = await this.#getAsObjectOrFetch(this.#geojson);
-      updateMapboxSource(layer, 'geojson', {
-        type: 'geojson',
-        data: geoJsonData,
-      });
+      await Promise.all(
+        sources.map(source => {
+          const data = this.#geojsonSources[source];
+          // Test if source exists
+          if (!getSource(layer, source)) {
+            throw new Error("Geojson source '" + source + "' does not exist.");
+          }
+          return updateMapboxSource(layer, source, {
+            type: 'geojson',
+            data: data,
+          });
+        }),
+      );
     } catch (error) {
-      console.error('Failed to apply overlay GeoJSON:', error);
+      console.error('Error updating geojson sources:', error);
     }
   }
 
@@ -325,6 +315,13 @@ export class YioMap extends LitElement {
 
   updated(changedProperties) {
     super.updated(changedProperties);
+
+    if (changedProperties.has("contentMap")) {
+      this.#applyContentMap();
+    } else if (changedProperties.has("geojsonSources") && this.#contentLayerPromise) {
+      this.#updateGeojsonSources();
+    }
+
     if (
       !this.notifyNextChange &&
       (changedProperties.has('center') || changedProperties.has('zoom'))

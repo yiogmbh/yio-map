@@ -237,7 +237,7 @@ export const OverlayGeoJson = {
     contentMap: {
       version: 8,
       sources: {
-        geojson: {
+        overlay: {
           type: 'geojson',
           data: {
             type: 'FeatureCollection',
@@ -249,7 +249,7 @@ export const OverlayGeoJson = {
         {
           id: 'line-layer',
           type: 'line',
-          source: 'geojson',
+          source: 'overlay',
 
           paint: {
             'line-color': '#0000ff',
@@ -259,7 +259,7 @@ export const OverlayGeoJson = {
         {
           id: 'point-layer',
           type: 'circle',
-          source: 'geojson',
+          source: 'overlay',
 
           paint: {
             'circle-radius': 6,
@@ -268,71 +268,36 @@ export const OverlayGeoJson = {
         },
       ],
     },
-    geojson: {
-      type: 'FeatureCollection',
-      features: [
-        {
-          type: 'Feature',
-          geometry: {
-            type: 'Polygon',
-            coordinates: [
-              [
-                [-74.006, 40.7128],
-                [-74.001, 40.7128],
-                [-74.001, 40.7178],
-                [-74.006, 40.7178],
-                [-74.006, 40.7128],
+    geojsonSources: {
+      overlay: {
+        type: 'FeatureCollection',
+        features: [
+          {
+            type: 'Feature',
+            geometry: {
+              type: 'Polygon',
+              coordinates: [
+                [
+                  [-74.006, 40.7128],
+                  [-74.001, 40.7128],
+                  [-74.001, 40.7178],
+                  [-74.006, 40.7178],
+                  [-74.006, 40.7128],
+                ],
               ],
-            ],
+            },
+            properties: { color: '#ff0000' },
           },
-          properties: { color: '#ff0000' },
-        },
-        {
-          type: 'Feature',
-          geometry: {
-            type: 'Point',
-            coordinates: [-74.023, 40.7148],
+          {
+            type: 'Feature',
+            geometry: {
+              type: 'Point',
+              coordinates: [-74.023, 40.7148],
+            },
+            properties: { color: '#00ff00' },
           },
-          properties: { color: '#00ff00' },
-        },
-      ],
-    },
-  },
-};
-
-/** @type {import('@storybook/web-components').StoryObj} */
-export const OverlayGeoJsonFromUrl = {
-  args: {
-    center: [0, 0],
-    zoom: 2,
-    contentMap: {
-      version: 8,
-      sources: {
-        'simple-background': {
-          type: 'raster',
-          tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
-          tileSize: 256,
-          attribution: '© OpenStreetMap contributors',
-        },
+        ],
       },
-      layers: [
-        {
-          id: 'background',
-          type: 'raster',
-          source: 'simple-background',
-        },
-        {
-          id: 'geojson',
-          type: 'line',
-          source: 'geojson',
-          paint: {
-            'line-color': '#0000ff',
-            'line-width': 2,
-          },
-        },
-      ],
     },
-    geojson:
-      'https://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_10m_rivers_europe.geojson',
   },
 };
