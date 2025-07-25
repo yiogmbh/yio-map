@@ -225,7 +225,8 @@ export class YioMap extends LitElement {
     });
   }
 
-  #applyContentMap() {
+  async #applyContentMap() {
+    await this.#contentLayerPromise;
     this.#contentLayer.getLayers().clear();
     this.#contentLayerPromise = null;
     if (this.contentMap) {
@@ -235,7 +236,8 @@ export class YioMap extends LitElement {
       ).catch(error => {
         console.error('Error applying content to yiomap:', error);
       });
-      this.#contentLayerPromise.then(() => this.#updateGeojsonSources());
+      await this.#contentLayerPromise
+      await this.#updateGeojsonSources();
     }
   }
 
