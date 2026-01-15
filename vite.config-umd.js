@@ -10,9 +10,9 @@ export default defineConfig({
     emptyOutDir: false,
     lib: {
       entry: resolve(__dirname, 'src/index.js'),
-      name: 'yio-map',
+      name: 'YioMap',
       fileName: 'yio-map',
-      formats: ['umd'],
+      formats: ['iife', 'umd'],
     },
   },
 });
