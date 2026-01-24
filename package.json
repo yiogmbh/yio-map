@@ -24,6 +24,7 @@
     "start": "vite",
     "build": "vite build && vite -c vite.config-umd.js build && tsc src/index.js --outDir dist --skipLibCheck --allowJS --declaration --declarationMap --emitDeclarationOnly",
     "prepublish": "npm run build",
+    "prepublishOnly": "npm run build",
     "lint": "eslint --ext .js,.html . && prettier \"**/*.(js|html)\" --check --ignore-path .gitignore",
     "format": "eslint --ext .js,.html . --fix && prettier \"**/*.(js|html)\" --write --ignore-path .gitignore",
     "prepare": "husky",
@@ -34,33 +35,33 @@
     "storybook:build": "storybook build"
   },
   "dependencies": {
-    "lit": "^3.1.4"
+    "lit": "^3.3.2"
   },
   "peerDependencies": {
-    "ol": "^10.5.0",
-    "ol-mapbox-style": "^13.0.1"
+    "ol": "^10.7.0",
+    "ol-mapbox-style": "^13.2.0"
   },
   "devDependencies": {
-    "@chromatic-com/storybook": "^3.2.4",
-    "@storybook/addon-essentials": "^8.5.8",
+    "@chromatic-com/storybook": "^3.2.7",
+    "@storybook/addon-essentials": "^8.6.14",
     "@storybook/blocks": "^8.5.8",
-    "@storybook/test": "^8.5.8",
+    "@storybook/test": "^8.6.15",
     "@storybook/web-components": "^8.5.8",
-    "@storybook/web-components-vite": "^8.5.8",
+    "@storybook/web-components-vite": "^8.6.15",
     "@vitest/browser": "^3.0.6",
-    "eslint": "^9.21.0",
+    "eslint": "^9.39.2",
     "eslint-config-flat-gitignore": "^2.1.0",
-    "eslint-config-prettier": "^10.0.1",
-    "eslint-plugin-html": "^8.1.2",
-    "eslint-plugin-storybook": "^0.11.3",
-    "husky": "^9.0.11",
-    "lint-staged": "^15.2.7",
-    "playwright": "^1.50.1",
-    "prettier": "^3.5.2",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-html": "^8.1.4",
+    "eslint-plugin-storybook": "^0.11.6",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.5.2",
+    "playwright": "^1.58.0",
+    "prettier": "^3.8.1",
     "rollup-plugin-peer-deps-external": "^2.2.4",
-    "storybook": "^8.6.7",
-    "typescript": "^5.7.3",
-    "vite": "^6.2.2",
+    "storybook": "^8.6.15",
+    "typescript": "^5.9.3",
+    "vite": "^6.4.1",
     "vitest": "^3.0.6"
   },
   "lint-staged": {
