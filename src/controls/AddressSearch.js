@@ -35,7 +35,7 @@ export class AddressSearch extends LitElement {
   constructor() {
     super();
     this.placeholder = 'Search Address...';
-    this.resultCount = 10;
+    this.resultCount = 5;
     this.sortByDistance = false;
     this.minSearchLength = 3;
     this.mapCenter = null;
