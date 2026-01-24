@@ -12,7 +12,7 @@
         font-family: sans-serif;
       }
       .map {
-        height: 400px;
+        height: 800px;
       }
       #info {
         display: none;
@@ -37,6 +37,7 @@
       class="map"
       enableSelect
       enablePinning
+      enableSearch
     ></yio-map>
     <div id="info"></div>
 
@@ -49,6 +50,10 @@
       <label>
         <input type="checkbox" name="attribute" value="enableSelect" checked />
         enableSelect</label
+      ><br />
+      <label>
+        <input type="checkbox" name="attribute" value="enableSearch" checked />
+        enableSearch</label
       ><br />
       <label>
         <input type="checkbox" name="attribute" value="editCreate" />

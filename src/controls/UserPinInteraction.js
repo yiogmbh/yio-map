@@ -3,6 +3,7 @@ import VectorLayer from 'ol/layer/Vector.js';
 import VectorSource from 'ol/source/Vector.js';
 import { Feature } from 'ol';
 import { Point } from 'ol/geom.js';
+import { toLonLat } from 'ol/proj.js';
 import { pinStyle } from '../constants.js';
 
 /**
@@ -40,23 +41,37 @@ export default class UserPinInteraction extends Interaction {
   }
 
   /**
+   * @param {Array<number>} coordinate - coordinate in EPSG:3857
+   */
+  #placePin(coordinate) {
+    const source = this.#layer.getSource();
+    source.clear();
+    const feature = new Feature(new Point(coordinate));
+    feature.setStyle(pinStyle);
+    source.addFeature(feature);
+
+    this.#yioMap.dispatchEvent(
+      new CustomEvent('pin', {
+        composed: true,
+        bubbles: true,
+        detail: { coordinate: toLonLat(coordinate) },
+      }),
+    );
+  }
+
+  /**
    * @param {import('ol').MapBrowserEvent} event
    */
   #handleClick(event) {
     const map = this.getMap();
     const contentLayer = this.#yioMap._getContentLayer();
-    const source = this.#layer.getSource();
     const features = map.getFeaturesAtPixel(event.pixel, {
       layerFilter: layer => contentLayer.getLayers().getArray().includes(layer),
     });
 
-    source.clear();
-
     // If no content feature was selected -> set the pin
     if (features.length === 0) {
-      const feature = new Feature(new Point(event.coordinate));
-      feature.setStyle(pinStyle);
-      source.addFeature(feature);
+      this.#placePin(event.coordinate);
     }
   }
 
@@ -65,6 +80,14 @@ export default class UserPinInteraction extends Interaction {
       this.#layer.getSource().clear();
     }
     super.setActive(active);
+  }
+
+  /**
+   * Set the pin to a specific location.
+   * @param {Array<number>} coordinate - coordinate in EPSG:3857
+   */
+  setPin(coordinate) {
+    this.#placePin(coordinate);
   }
 
   /**

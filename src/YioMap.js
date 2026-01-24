@@ -9,10 +9,15 @@ import LayerControl from './controls/LayerControl.js';
 import UserSelectInteraction from './controls/UserSelectInteraction.js';
 import UserEditInteraction from './controls/UserEditInteraction.js';
 import LayerGroup from 'ol/layer/Group.js';
-import apply, { getSource, updateMapboxLayer, updateMapboxSource } from 'ol-mapbox-style';
+import apply, {
+  getSource,
+  updateMapboxLayer,
+  updateMapboxSource,
+} from 'ol-mapbox-style';
 import UserPinInteraction from './controls/UserPinInteraction.js';
 import { defaults as defaultControls } from 'ol/control/defaults.js';
 import { YioAttribution } from './controls/YioAttribution.js';
+import AddressSearchControl from './controls/AddressSearchControl.js';
 
 export class YioMap extends LitElement {
   static styles = [
@@ -22,6 +27,7 @@ export class YioMap extends LitElement {
       :host {
         display: block;
         height: 200px;
+        container-type: size;
       }
 
       .map {
@@ -40,6 +46,14 @@ export class YioMap extends LitElement {
       .cursor-pointer.cursor-move {
         cursor: grab;
       }
+
+      .ol-address-search {
+        top: 0.5em;
+        left: 2.5em;
+        max-height: 50%;
+        max-width: 300px;
+        background-color: transparent;
+      }
     `,
   ];
 
@@ -51,6 +65,7 @@ export class YioMap extends LitElement {
     editModify: { type: Array },
     enablePinning: { type: Boolean },
     enableSelect: { type: Boolean },
+    enableSearch: { type: Boolean },
     geojsonSources: { type: Object },
     editFeatures: { attribute: false },
     lastClickCoordinate: { type: Array, attribute: false },
@@ -118,6 +133,16 @@ export class YioMap extends LitElement {
   #geojsonSources = null;
 
   #sourceLayerVisibility = null;
+
+  /**
+   * @type {boolean} whether search is enabled
+   */
+  #enableSearch = false;
+
+  /**
+   * @type {AddressSearchControl}
+   */
+  #addressSearchControl = null;
 
   constructor() {
     super();
@@ -220,6 +245,15 @@ export class YioMap extends LitElement {
     this.#sourceLayerVisibility = value;
   }
 
+  get enableSearch() {
+    return this.#enableSearch;
+  }
+
+  set enableSearch(value) {
+    this.#enableSearch = value;
+    this.#updateAddressSearchControl();
+  }
+
   get editFeatures() {
     const features = this.#userEditInteraction
       .getEditLayer()
@@ -247,7 +281,7 @@ export class YioMap extends LitElement {
       ).catch(error => {
         console.error('Error applying content to yiomap:', error);
       });
-      await this.#contentLayerPromise
+      await this.#contentLayerPromise;
       await this.#updateSourceLayerVisibility();
       await this.#updateGeojsonSources();
     }
@@ -292,18 +326,23 @@ export class YioMap extends LitElement {
       return;
     }
 
-    const style = layer.get("mapbox-style");
+    const style = layer.get('mapbox-style');
     const layerIds = Object.keys(style.layers);
     try {
       await Promise.all(
         layerIds.map(layerId => {
           const mapboxLayer = style.layers[layerId];
-          const sourceLayer = mapboxLayer["source-layer"];
+          const sourceLayer = mapboxLayer['source-layer'];
           if (!sourceLayer || !(sourceLayer in this.#sourceLayerVisibility)) {
             return;
           }
-          const visibility = this.#sourceLayerVisibility[sourceLayer] ? 'visible' : 'none';
-          updateMapboxLayer(layer, {...mapboxLayer, layout: {...mapboxLayer.layout, visibility} })
+          const visibility = this.#sourceLayerVisibility[sourceLayer]
+            ? 'visible'
+            : 'none';
+          updateMapboxLayer(layer, {
+            ...mapboxLayer,
+            layout: { ...mapboxLayer.layout, visibility },
+          });
         }),
       );
     } catch (error) {
@@ -320,6 +359,7 @@ export class YioMap extends LitElement {
     });
     this.#map.addControl(YioAttribution);
     this.#map.addControl(new LayerControl({ map: this.#map }));
+    this.#updateAddressSearchControl();
 
     this.#map.addLayer(this.#contentLayer);
 
@@ -357,11 +397,19 @@ export class YioMap extends LitElement {
   updated(changedProperties) {
     super.updated(changedProperties);
 
-    if (changedProperties.has("sourceLayerVisibility") && !changedProperties.has("contentMap") && this.#contentLayerPromise) {
+    if (
+      changedProperties.has('sourceLayerVisibility') &&
+      !changedProperties.has('contentMap') &&
+      this.#contentLayerPromise
+    ) {
       this.#updateSourceLayerVisibility();
     }
 
-    if (changedProperties.has("geojsonSources") && !changedProperties.has("contentMap") && this.#contentLayerPromise) {
+    if (
+      changedProperties.has('geojsonSources') &&
+      !changedProperties.has('contentMap') &&
+      this.#contentLayerPromise
+    ) {
       this.#updateGeojsonSources();
     }
 
@@ -388,8 +436,42 @@ export class YioMap extends LitElement {
     );
   }
 
+  #handleSearchSelect = e => {
+    const { coordinates } = e.detail;
+    const center = toLonLat(coordinates);
+    if (coordinates) {
+      this.center = center;
+      this.zoom = 18;
+    }
+    if (this.enablePinning) {
+      this.setPin(center);
+    }
+  };
+
+  /**
+   * Set the pin to a specific location.
+   * @param {Array<number>} lonLat - [longitude, latitude] in EPSG:4326
+   */
+  setPin(lonLat) {
+    this.#userPinInteraction.setPin(fromLonLat(lonLat));
+  }
+
+  #updateAddressSearchControl() {
+    if (!this.#map) return;
+
+    if (this.#enableSearch && !this.#addressSearchControl) {
+      this.#addressSearchControl = new AddressSearchControl({
+        onSelect: this.#handleSearchSelect,
+      });
+      this.#map.addControl(this.#addressSearchControl);
+    } else if (!this.#enableSearch && this.#addressSearchControl) {
+      this.#map.removeControl(this.#addressSearchControl);
+      this.#addressSearchControl = null;
+    }
+  }
+
   render() {
-    return html` <div class="map"></div> `;
+    return html`<div class="map"></div>`;
   }
 }
 
