@@ -16,7 +16,7 @@ const TRANSLATIONS = {
       searchFailed: 'Suche fehlgeschlagen. Bitte erneut versuchen.',
       showing: 'Zeige',
       of: 'von',
-      results: 'Ergebnisse',
+      results: 'Ergebnissen',
       preferNearby: 'Nächstgelegene bevorzugen',
       noResults: 'Keine Ergebnisse',
     },
