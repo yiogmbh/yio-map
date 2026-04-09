@@ -1,6 +1,6 @@
 import Attribution from 'ol/control/Attribution.js';
 import YioIconPink from '../assets/yio_icon_pink.svg';
-import { version } from '../../package.json';
+import pkg from '../../package.json' with { type: 'json' };
 
 const img = document.createElement('img');
 img.src = YioIconPink;
@@ -26,7 +26,7 @@ export const YioAttribution = new Attribution({
     entries.push(`
       <a href="https://yio.at" target="_blank" rel="noopener">
         <b>yio gmbh</b>
-      </a> v${version}
+      </a> v${pkg.version}
     `);
 
     for (const attr of dynamicAttributions) {

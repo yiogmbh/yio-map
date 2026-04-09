@@ -21,6 +21,7 @@
     "declaration": true,
     "incremental": true,
     "skipLibCheck": true,
+    "resolveJsonModule": true,
     "types": ["node", "vite/client"]
   },
   "include": ["**/*.js"],
