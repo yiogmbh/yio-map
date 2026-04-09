@@ -1,5 +1,5 @@
 import { it, describe, expect, vi } from 'vitest';
-import { page, userEvent } from '@vitest/browser/context';
+import { page, userEvent } from 'vitest/browser';
 import styleJson from './fixtures/styleJson.js';
 import '../src/index.js';
 
