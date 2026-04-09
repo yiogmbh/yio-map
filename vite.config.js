@@ -1,5 +1,3 @@
-/// <reference types="vitest" />
-
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import https from 'node:https';
@@ -21,16 +19,6 @@ export default ({ mode }) => {
         name: 'yio-map',
         fileName: 'yio-map',
         formats: ['es'],
-      },
-    },
-    test: {
-      globals: true,
-      browser: {
-        provider: 'playwright',
-        headless: true,
-        enabled: true,
-        // at least one instance is required
-        instances: [{ browser: 'chromium' }],
       },
     },
   });
