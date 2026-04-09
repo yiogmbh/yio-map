@@ -1,6 +1,7 @@
 import { css, html, LitElement, unsafeCSS } from 'lit';
 import { fromLonLat, toLonLat } from 'ol/proj.js';
 import style from './AddressSearch.css?inline';
+import { getTranslations } from '../i18n.js';
 
 const DORIS_API_BASE = 'https://srv.doris.at/solr/searchservice/search/all2';
 const DEBOUNCE_MS = 250;
@@ -16,6 +17,7 @@ export class AddressSearch extends LitElement {
   ];
 
   static properties = {
+    lang: { type: String },
     placeholder: { type: String },
     resultCount: { type: Number },
     sortByDistance: { type: Boolean },
@@ -29,12 +31,15 @@ export class AddressSearch extends LitElement {
     _totalResults: { state: true },
   };
 
+  get #t() {
+    return getTranslations('addressSearch', this.lang);
+  }
+
   #debounceTimer = null;
   #abortController = null;
 
   constructor() {
     super();
-    this.placeholder = 'Search Address...';
     this.resultCount = 5;
     this.sortByDistance = false;
     this.minSearchLength = 3;
@@ -77,7 +82,7 @@ export class AddressSearch extends LitElement {
       if (err.name !== 'AbortError') {
         console.error('Search error:', err);
         this._results = [];
-        this._error = 'Search failed. Please try again.';
+        this._error = this.#t.searchFailed;
       }
     } finally {
       this._loading = false;
@@ -158,7 +163,7 @@ export class AddressSearch extends LitElement {
     if (!result.coordinates) return;
 
     // @ts-ignore
-    (document.activeElement)?.blur();
+    document.activeElement?.blur();
     this._query = result.title;
 
     this.dispatchEvent(
@@ -237,7 +242,7 @@ export class AddressSearch extends LitElement {
     return html`
       <div class="results-footer">
         <span class="result-count-display">
-          Showing
+          ${this.#t.showing}
           <input
             type="number"
             class="result-count-input"
@@ -246,7 +251,7 @@ export class AddressSearch extends LitElement {
             min="1"
             max="100"
           />
-          of ${this._totalResults} results
+          ${this.#t.of} ${this._totalResults} ${this.#t.results}
         </span>
         <label class="prefer-close-label">
           <input
@@ -254,7 +259,7 @@ export class AddressSearch extends LitElement {
             .checked=${this.sortByDistance}
             @change=${this.#handleSortToggle}
           />
-          Prefer nearby
+          ${this.#t.preferNearby}
         </label>
       </div>
     `;
@@ -266,8 +271,12 @@ export class AddressSearch extends LitElement {
     return html`
       <div class="results-dropdown">
         <ul class="results-list">
-          ${this._error ? html`<div class="no-results error">${this._error}</div>` : null}
-          ${this._results.length === 0 && !this._error ?html`<div class="no-results">No results</div>` : null}
+          ${this._error
+            ? html`<div class="no-results error">${this._error}</div>`
+            : null}
+          ${this._results.length === 0 && !this._error
+            ? html`<div class="no-results">${this.#t.noResults}</div>`
+            : null}
           ${this._results.map(
             result => html`
               <li
@@ -308,7 +317,7 @@ export class AddressSearch extends LitElement {
             <input
               type="text"
               class="search-input"
-              .placeholder=${this.placeholder}
+              .placeholder=${this.#t.placeholder}
               .value=${this._query}
               @input=${this.#handleInput}
             />

@@ -21,6 +21,10 @@ export default class AddressSearchControl extends Control {
     }
   }
 
+  set lang(value) {
+    this.searchElement.lang = value;
+  }
+
   setMap(map) {
     super.setMap(map);
     if (map) {

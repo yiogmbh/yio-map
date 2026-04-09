@@ -66,6 +66,7 @@ export class YioMap extends LitElement {
     enablePinning: { type: Boolean },
     enableSelect: { type: Boolean },
     enableSearch: { type: Boolean },
+    lang: { type: String },
     geojsonSources: { type: Object },
     editFeatures: { attribute: false },
     lastClickCoordinate: { type: Array, attribute: false },
@@ -138,6 +139,11 @@ export class YioMap extends LitElement {
    * @type {boolean} whether search is enabled
    */
   #enableSearch = false;
+
+  /**
+   * @type {string|null}
+   */
+  #lang = null;
 
   /**
    * @type {AddressSearchControl}
@@ -252,6 +258,17 @@ export class YioMap extends LitElement {
   set enableSearch(value) {
     this.#enableSearch = value;
     this.#updateAddressSearchControl();
+  }
+
+  get lang() {
+    return this.#lang;
+  }
+
+  set lang(value) {
+    this.#lang = value;
+    if (this.#addressSearchControl) {
+      this.#addressSearchControl.lang = value;
+    }
   }
 
   get editFeatures() {
@@ -463,6 +480,9 @@ export class YioMap extends LitElement {
       this.#addressSearchControl = new AddressSearchControl({
         onSelect: this.#handleSearchSelect,
       });
+      if (this.#lang) {
+        this.#addressSearchControl.lang = this.#lang;
+      }
       this.#map.addControl(this.#addressSearchControl);
     } else if (!this.#enableSearch && this.#addressSearchControl) {
       this.#map.removeControl(this.#addressSearchControl);
