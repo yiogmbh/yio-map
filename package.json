@@ -1,12 +1,10 @@
 {
   "name": "yio-map",
-  "description": "Webcomponent yio-map following open-wc recommendations",
+  "description": "Web component for interactive maps using LitElement and OpenLayers",
   "license": "MIT",
   "author": "yio-map",
   "version": "0.12.1",
   "type": "module",
-  "main": "dist/yio-map.umd.js",
-  "module": "dist/yio-map.js",
   "files": [
     "dist"
   ],
@@ -14,10 +12,6 @@
     ".": {
       "import": "./dist/yio-map.js",
       "types": "./dist/index.d.ts"
-    },
-    "./YioMap.js": {
-      "import": "./dist/YioMap.js",
-      "types": "./dist/YioMap.d.ts"
     }
   },
   "scripts": {

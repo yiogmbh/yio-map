@@ -1,101 +1,78 @@
-yio-map
+# yio-map
 
-A map web-component to display various geo data using OpenLayers under the hood.
+Web component for interactive maps built on [LitElement](https://lit.dev/) and [OpenLayers](https://openlayers.org/).
 
-## Installation
+## Usage
+
+### CDN
+
+```html
+<yio-map
+  style="width: 100%; height: 500px;"
+  contentMap="/path/to/style.json"
+  center="[14.5, 47.5]"
+  zoom="8"
+></yio-map>
+<script src="https://cdn.jsdelivr.net/npm/yio-map@0/dist/yio-map.iife.js"></script>
+```
+
+The IIFE bundle includes all dependencies and registers `<yio-map>` as a custom element.
+
+### npm
 
 ```bash
 npm i yio-map
 ```
 
-## Usage
-
-### With the npm package
-
-```html
-<script type="module">
-  import 'yio-map';
-</script>
-
-<yio-map></yio-map>
+```js
+import 'yio-map';
 ```
 
-### With the standalone build
+When using a bundler, `ol` and `ol-mapbox-style` are expected as peer dependencies.
 
-Download `yio-map.umd.cjs` from the [latest release](https://github.com/yiogmbh/yio-map/releases/latest), put it in your project directory, and add it with a `script` element:
+## Attributes
 
-```html
-<script src="./yio-map.umd.cjs"></script>
+| Attribute | Type | Description |
+|---|---|---|
+| `contentMap` | `string` | URL to a Mapbox/MapLibre style JSON |
+| `center` | `[lon, lat]` | Initial map center in EPSG:4326 |
+| `zoom` | `number` | Initial zoom level (1 -- 22) |
+| `enableSearch` | `boolean` | Show address search input |
+| `enablePinning` | `boolean` | Allow placing markers on the map |
+| `enableSelect` | `boolean` | Enable feature selection on click/hover |
+| `editCreate` | `string` | Source layer name to draw new features on |
+| `editModify` | `number[]` | Feature IDs enabled for editing |
+| `geojsonSources` | `object\|string` | GeoJSON data or URL to overlay |
+| `sourceLayerVisibility` | `object` | Toggle visibility of source layers |
+| `lang` | `string` | Override UI language (defaults to `<html lang>`, then browser language, then `en`). Supported: `en`, `de` |
 
-<yio-map></yio-map>
-```
+## Events
 
-## Linting and formatting
+| Event | Detail | Description |
+|---|---|---|
+| `change` | `{ changedProperties }` | Map state changed (center, zoom, features) |
+| `click` | PointerEvent | Click on the map (with `enableSelect`) |
+| `pin` | `{ coordinate: [lon, lat] }` | Marker placed (with `enablePinning`) |
 
-To scan the project for linting and formatting errors, run
+## Development
+
+Requires a `.env` file for API proxying (copy from `.env.example`).
 
 ```bash
-npm run lint
+npm start           # Dev server with demo (index.html)
+npm test            # Tests (Vitest + Playwright)
+npm run test:watch  # Interactive test mode
+npm run lint        # ESLint + Prettier check
+npm run format      # Auto-fix lint/format
+npm run build       # Production build (ES + IIFE + UMD + types)
+npm run storybook   # Component stories
 ```
 
-To automatically fix linting and formatting errors, run
+## Release
 
 ```bash
-npm run format
-```
-
-## Testing with Web Test Runner
-
-To execute a single test run:
-
-```bash
-npm test
-```
-
-To run the tests in interactive watch mode run:
-
-```bash
-npm run test:watch
-```
-
-## Demoing with Storybook
-
-To run a local instance of Storybook for your component, run
-
-```bash
-npm run storybook
-```
-
-To build a production version of Storybook, run
-
-```bash
-npm run storybook:build
-```
-
-## Local Demo and Development
-
-```bash
-npm start
-```
-
-To run a local development server that serves the basic demo located in `index.html`
-
-To be able to access yio resources, an `.env` file should be created. See `.env.example` for an explanation of available environment variables. As a starting point, copy `.env.example` to `.env`.
-
-## Build
-
-```bash
-npm run build
-```
-
-To build the web component. In addition to the package files, a standalone script with all dependencies included will be available in `dist/yio-map.umd.cjs`.
-
-## Publishing a release
-
-The quickest way to push a tag that triggers an automated release process is to use `npm vesion {patch|minor|major}` and `git push --folow-tags`. Example:
-
-```bash
-git pull origin main
-npm version patch
+npm version patch   # or minor / major
 git push --follow-tags
 ```
+
+Pushing a version tag triggers CI to run tests, build, publish to npm, and create a GitHub release.
