@@ -28,7 +28,13 @@ npm i yio-map
 import 'yio-map';
 ```
 
-When using a bundler, `ol` and `ol-mapbox-style` are expected as peer dependencies.
+When using a bundler, `ol` (`^10.11.0`) and `ol-mapbox-style` (`^13.9.0`) are expected as peer dependencies.
+
+### Style requirements
+
+Every layer in the `contentMap` style must declare a valid `type` (e.g. `circle`, `line`, `fill`). Since `ol-mapbox-style` 13.9, a single layer without a `type` makes the whole style fail to load; the error is logged to the console.
+
+See [CHANGELOG.md](CHANGELOG.md) for breaking changes between versions.
 
 ## Attributes
 
