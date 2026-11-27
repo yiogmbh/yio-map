@@ -271,34 +271,44 @@ export class AddressSearch extends LitElement {
     return html`
       <div class="results-dropdown">
         <ul class="results-list">
-          ${this._error
-            ? html`<div class="no-results error">${this._error}</div>`
-            : null}
-          ${this._results.length === 0 && !this._error
-            ? html`<div class="no-results">${this.#t.noResults}</div>`
-            : null}
+          ${
+            this._error
+              ? html`<div class="no-results error">${this._error}</div>`
+              : null
+          }
+          ${
+            this._results.length === 0 && !this._error
+              ? html`<div class="no-results">${this.#t.noResults}</div>`
+              : null
+          }
           ${this._results.map(
             result => html`
               <li
                 class="result-item"
                 @click=${() => this.#handleResultClick(result)}
               >
-                ${result.type === 'special'
-                  ? this.#renderSpecialIcon()
-                  : this.#renderAddressIcon()}
+                ${
+                  result.type === 'special'
+                    ? this.#renderSpecialIcon()
+                    : this.#renderAddressIcon()
+                }
                 <div class="result-content">
                   <div class="result-title">${result.title}</div>
-                  ${result.subtitle
-                    ? html`<div class="result-subtitle">
-                        ${result.subtitle}
-                      </div>`
-                    : null}
+                  ${
+                    result.subtitle
+                      ? html`<div class="result-subtitle">
+                          ${result.subtitle}
+                        </div>`
+                      : null
+                  }
                 </div>
-                ${result.distance
-                  ? html`<span class="result-distance"
-                      >${result.distance}</span
-                    >`
-                  : null}
+                ${
+                  result.distance
+                    ? html`<span class="result-distance"
+                        >${result.distance}</span
+                      >`
+                    : null
+                }
               </li>
             `,
           )}
@@ -321,9 +331,9 @@ export class AddressSearch extends LitElement {
               .value=${this._query}
               @input=${this.#handleInput}
             />
-            ${this._loading
-              ? html`<div class="loading-indicator"></div>`
-              : null}
+            ${
+              this._loading ? html`<div class="loading-indicator"></div>` : null
+            }
           </div>
           ${this.#renderResults()}
         </div>
