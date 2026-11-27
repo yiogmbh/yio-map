@@ -102,16 +102,16 @@ describe('YioMap', () => {
       layers: [
         {
           id: 'point-layer',
+          type: 'circle',
           source: 'simple-features',
         },
       ],
     });
 
-    const numberOfContentLayers = await new Promise(resolve => {
-      setTimeout(() => {
-        resolve(el._getContentLayer().getLayers().getLength());
-      }, 0);
-    });
-    expect(numberOfContentLayers).to.be.greaterThan(0);
+    await vi.waitFor(() =>
+      expect(el._getContentLayer().getLayers().getLength()).to.be.greaterThan(
+        0,
+      ),
+    );
   });
 });

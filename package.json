@@ -20,8 +20,7 @@
   },
   "scripts": {
     "start": "vite",
-    "build": "vite build && vite -c vite.config-umd.js build && tsc src/index.js --outDir dist --skipLibCheck --allowJS --declaration --declarationMap --emitDeclarationOnly",
-    "prepublish": "npm run build",
+    "build": "vite build && vite -c vite.config-umd.js build && tsc --ignoreConfig src/index.js --rootDir src --outDir dist --skipLibCheck --allowJS --declaration --declarationMap --emitDeclarationOnly",
     "prepublishOnly": "npm run build",
     "lint": "eslint --ext .js,.html . && prettier \"**/*.(js|html)\" --check --ignore-path .gitignore",
     "format": "eslint --ext .js,.html . --fix && prettier \"**/*.(js|html)\" --write --ignore-path .gitignore",
@@ -33,34 +32,34 @@
     "storybook:build": "storybook build"
   },
   "dependencies": {
-    "lit": "^3.3.2"
+    "lit": "^3.3.3"
   },
   "peerDependencies": {
-    "ol": "^10.7.0",
-    "ol-mapbox-style": "^13.2.0"
+    "ol": "^10.11.0",
+    "ol-mapbox-style": "^13.9.0"
   },
   "devDependencies": {
-    "@chromatic-com/storybook": "^5.1.1",
-    "@storybook/addon-docs": "10.3.5",
-    "@storybook/web-components": "^10.3.5",
-    "@storybook/web-components-vite": "^10.3.5",
-    "@types/node": "^25.0.10",
-    "@vitest/browser": "^4.1.4",
-    "@vitest/browser-playwright": "^4.1.4",
-    "eslint": "^9.39.2",
-    "eslint-config-flat-gitignore": "^2.1.0",
-    "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-html": "^8.1.4",
-    "eslint-plugin-storybook": "^10.3.5",
+    "@chromatic-com/storybook": "^5.6.0",
+    "@storybook/addon-docs": "10.6.9",
+    "@storybook/web-components": "^10.6.9",
+    "@storybook/web-components-vite": "^10.6.9",
+    "@types/node": "^25.9.12",
+    "@vitest/browser": "^5.1.2",
+    "@vitest/browser-playwright": "^5.1.2",
+    "eslint": "^10.15.0",
+    "eslint-config-flat-gitignore": "^2.4.0",
+    "eslint-config-prettier": "^10.1.9",
+    "eslint-plugin-html": "^8.2.1",
+    "eslint-plugin-storybook": "^10.6.9",
     "husky": "^9.1.7",
-    "lint-staged": "^15.5.2",
-    "playwright": "^1.58.0",
-    "prettier": "^3.8.1",
+    "lint-staged": "^17.6.2",
+    "playwright": "^1.65.1",
+    "prettier": "^3.10.1",
     "rollup-plugin-peer-deps-external": "^2.2.4",
-    "storybook": "10.3.5",
-    "typescript": "^5.9.3",
-    "vite": "8.0.5",
-    "vitest": "^4.1.4"
+    "storybook": "10.6.9",
+    "typescript": "^7.0.2",
+    "vite": "8.4.0",
+    "vitest": "^5.1.2"
   },
   "lint-staged": {
     "*.js": [

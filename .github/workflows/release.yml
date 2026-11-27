@@ -12,14 +12,14 @@ jobs:
       contents: write
       id-token: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: "24.x"
           registry-url: "https://registry.npmjs.org"
       - name: Cache Node.js modules
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             ~/.npm
@@ -35,7 +35,7 @@ jobs:
           git fetch origin main
           git merge-base --is-ancestor ${{ github.sha }} origin/main || (echo "Tag is not on main" && exit 1)
       - name: Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: dist/yio-map.iife.js
           generate_release_notes: true
